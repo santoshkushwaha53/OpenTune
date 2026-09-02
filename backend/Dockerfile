@@ -20,6 +20,7 @@ ENV NODE_ENV=production
 RUN addgroup -S opentune && adduser -S -G opentune opentune
 COPY --from=build --chown=opentune:opentune /app/node_modules ./node_modules
 COPY --from=build --chown=opentune:opentune /app/dist ./dist
+COPY --from=build --chown=opentune:opentune /app/src/generated ./dist/generated
 COPY --from=build --chown=opentune:opentune /app/prisma ./prisma
 COPY --from=build --chown=opentune:opentune /app/prisma.config.ts ./
 COPY --from=build --chown=opentune:opentune /app/package.json ./
