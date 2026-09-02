@@ -37,7 +37,7 @@ See [ARCHITECTURE.md](ARCHITECTURE.md), [API.md](API.md), [docs/DEPLOY.md](docs/
 | API | Node.js, TypeScript, Fastify |
 | Database | PostgreSQL 16 + Prisma |
 | Auth | JWT access tokens + rotating refresh sessions |
-| Catalog sources | Audius, Jamendo, Internet Archive official APIs |
+| Catalog sources | YouTube (stream), Audius, Jamendo, Internet Archive official APIs |
 
 ## Repository layout
 

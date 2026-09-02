@@ -32,6 +32,7 @@ flowchart LR
   resolver[SourceResolver]
   jamendo[JamendoAPI]
   audius[AudiusAPI]
+  youtube[YouTubePlayer]
   archive[InternetArchiveAPI]
   fma[FMADisabled]
   other[FutureProviders]
@@ -41,11 +42,13 @@ flowchart LR
   flutter -->|metadata JWT REST| api
   api --> pg
   api --> resolver
+  resolver --> youtube
   resolver --> audius
   resolver --> jamendo
   resolver --> archive
   resolver --> fma
   resolver --> other
+  youtube -->|official in-app player| flutter
   audius -->|stream or download URL| flutter
   jamendo -->|stream or download URL| flutter
   archive -->|stream or download URL| flutter
@@ -110,10 +113,11 @@ Primary navigation: Home, Discover, Library. A persistent mini-player sits above
 ```
 backend/src/providers/
   core/                 MusicProvider, capabilities, DTOs, errors
-  audius/               official Audius API (priority 1)
-  jamendo/              official Jamendo API (priority 2)
-  archive/              official Internet Archive JSON APIs (priority 3, CC/PD only)
-  fma/                  disabled FMA slot (priority 4)
+  youtube/              official YouTube Data API (priority 1, stream in YouTube player, no download)
+  audius/               official Audius API (priority 2)
+  jamendo/              official Jamendo API (priority 3)
+  archive/              official Internet Archive JSON APIs (priority 4, CC/PD only)
+  fma/                  disabled FMA slot (priority 5)
 ```
 
 Conceptual interface:
@@ -141,7 +145,7 @@ type ProviderCapabilities = {
 
 The source resolver never invents a download from a stream-only capability set.
 
-First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). **Audius** is priority 1 when `AUDIUS_API_KEY` is set (downloadable CC tracks only). **Internet Archive** is priority 3 for audio items that already declare CC BY/BY-SA or public-domain/CC0 licenses. **FMA** is a disabled priority-4 slot because its public API was retired and scraping/hotlinking are not allowed. Additional providers are additive plugins.
+First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). **YouTube** is priority 1 when `YOUTUBE_API_KEY` is set: metadata from Data API v3, playback in YouTube’s official in-app player, never a download. **Audius** is priority 2 when `AUDIUS_API_KEY` is set (downloadable CC tracks only). **Internet Archive** is priority 4 for audio items that already declare CC BY/BY-SA or public-domain/CC0 licenses. **FMA** is a disabled priority-5 slot because its public API was retired and scraping/hotlinking are not allowed. Additional providers are additive plugins.
 
 ## Source resolver (Phase 7)
 
@@ -155,7 +159,7 @@ Sohum discovery search walks enabled connectors in priority order:
 Search (Hindi / English / …)
         │
         ▼
-  Source router: Audius → Jamendo → Internet Archive → FMA
+  Source router: YouTube → Audius → Jamendo → Internet Archive → FMA
         │
         ▼
   Rights filter: downloadAllowed?

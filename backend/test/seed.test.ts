@@ -56,7 +56,7 @@ describe("database seed", () => {
     });
     expect(archive).not.toBeNull();
     expect(archive?.isEnabled).toBe(false);
-    expect(archive?.priority).toBe(3);
+    expect(archive?.priority).toBe(4);
     expect(archive?.baseUrl).toBe("https://archive.org");
   });
 

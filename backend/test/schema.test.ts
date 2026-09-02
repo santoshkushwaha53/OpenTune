@@ -8,6 +8,7 @@ import {
   JAMENDO_CAPABILITIES,
   JAMENDO_PROVIDER_SLUG,
   SEED_LICENSES,
+  YOUTUBE_PROVIDER_SLUG,
 } from "../prisma/seed-data.js";
 
 const schemaPath = resolve(import.meta.dirname, "../prisma/schema.prisma");
@@ -81,6 +82,10 @@ describe("seed data", () => {
     expect(JAMENDO_CAPABILITIES.supportsRedistribution).toBe(false);
     expect(JAMENDO_CAPABILITIES.supportsStreaming).toBe(true);
     expect(JAMENDO_CAPABILITIES.supportsDownload).toBe(true);
+  });
+
+  it("registers YouTube as a stream-only provider slug", () => {
+    expect(YOUTUBE_PROVIDER_SLUG).toBe("youtube");
   });
 
   it("registers Internet Archive as an open-catalog provider slug", () => {

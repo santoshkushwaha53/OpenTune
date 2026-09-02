@@ -13,6 +13,14 @@ const DEFAULT_ALLOWLIST = [
   "audius.co",
   "archive.org",
   "us.archive.org",
+  "www.googleapis.com",
+  "youtube.com",
+  "www.youtube.com",
+  "m.youtube.com",
+  "youtu.be",
+  "i.ytimg.com",
+  "ytimg.com",
+  "img.youtube.com",
 ];
 
 /**

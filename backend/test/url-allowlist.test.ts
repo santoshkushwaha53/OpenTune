@@ -14,6 +14,9 @@ describe("provider URL allowlist", () => {
       assertSafeProviderUrl("https://ia601208.us.archive.org/5/items/open-pulse/a.mp3")
         .hostname,
     ).toBe("ia601208.us.archive.org");
+    expect(
+      assertSafeProviderUrl("https://www.googleapis.com/youtube/v3/search").hostname,
+    ).toBe("www.googleapis.com");
     expect(() => assertSafeProviderUrl("http://api.jamendo.com/v3.0/tracks")).toThrow();
     expect(() => assertSafeProviderUrl("https://evil.example/audio.mp3")).toThrow();
     expect(() =>

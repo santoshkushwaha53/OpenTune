@@ -48,6 +48,38 @@ class PlayerController extends ChangeNotifier {
   String? get licenseLabel => currentItem?.license;
   String? get attribution => currentItem?.attribution;
   String? get sourceUrl => currentItem?.url;
+  String? get currentYoutubeVideoId =>
+      currentItem?.localFile == true ? null : youtubeVideoId(currentItem?.url);
+  bool get isYoutube => currentYoutubeVideoId != null;
+
+  void syncEngine({Duration? position, Duration? duration, bool? playing}) {
+    if (position != null) {
+      this.position = position;
+    }
+    if (duration != null) {
+      this.duration = duration;
+    }
+    if (playing != null) {
+      this.playing = playing;
+    }
+    notifyListeners();
+  }
+
+  YoutubePlaybackHost? _youtubeHost;
+  YoutubePlaybackHost? get youtubeHost => _youtubeHost;
+  set youtubeHost(YoutubePlaybackHost? host) {
+    _youtubeHost = host;
+    final id = currentYoutubeVideoId;
+    if (host == null || id == null || !enableEngine) {
+      return;
+    }
+    host.load(id).then((_) {
+      if (!playing) {
+        return host.pause();
+      }
+    });
+  }
+
   bool get shuffle => queue.shuffle;
   QueueRepeatMode get repeat => queue.repeat;
   bool get usingLocalFile => currentItem?.localFile ?? false;
@@ -127,6 +159,19 @@ class PlayerController extends ChangeNotifier {
       await session.configure(const AudioSessionConfiguration.music());
     } catch (_) {}
     try {
+      if (youtubeVideoId(item.url) != null) {
+        await _player?.pause();
+        if (enableEngine) {
+          await youtubeHost?.load(youtubeVideoId(item.url)!);
+        }
+        playing = true;
+        if (_offline?.offline != true) {
+          await _api.recordPlay(item.track.id);
+        }
+        notifyListeners();
+        return;
+      }
+      await youtubeHost?.stop();
       final player = _ensurePlayer();
       if (item.localFile) {
         await player.setFilePath(item.url);
@@ -172,7 +217,15 @@ class PlayerController extends ChangeNotifier {
       return;
     }
     try {
-      if (playing) {
+      if (isYoutube) {
+        if (playing) {
+          await youtubeHost?.pause();
+          playing = false;
+        } else {
+          await youtubeHost?.play();
+          playing = true;
+        }
+      } else if (playing) {
         await _player?.pause();
         playing = false;
       } else {
@@ -187,7 +240,11 @@ class PlayerController extends ChangeNotifier {
 
   Future<void> seek(Duration value) async {
     try {
-      await _player?.seek(value);
+      if (isYoutube) {
+        await youtubeHost?.seek(value);
+      } else {
+        await _player?.seek(value);
+      }
     } catch (_) {}
     position = value;
     notifyListeners();
@@ -314,7 +371,17 @@ class PlayerController extends ChangeNotifier {
 
   @override
   void dispose() {
+    youtubeHost = null;
     _player?.dispose();
     super.dispose();
   }
+}
+
+/// Official YouTube IFrame player, owned by the UI so tests can omit it.
+abstract class YoutubePlaybackHost {
+  Future<void> load(String videoId);
+  Future<void> play();
+  Future<void> pause();
+  Future<void> seek(Duration position);
+  Future<void> stop();
 }

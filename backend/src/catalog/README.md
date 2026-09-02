@@ -7,7 +7,7 @@ The **source resolver** (`resolver.ts`) runs at request time:
 1. Load stored provenance (`provider` + `externalTrackId` + license flags)
 2. Ask the connector for playback/download URLs
 3. Apply capability helpers so stream-only tracks cannot become downloads
-4. Allowlist the URL host (Jamendo, Audius, Internet Archive, or `example.invalid` for the test fake)
+4. Allowlist the URL host (YouTube, Jamendo, Audius, Internet Archive, or `example.invalid` for the test fake)
 5. Return descriptors to the client — never audio bytes, never a media proxy path
 
 Resolved URLs are not written to PostgreSQL.

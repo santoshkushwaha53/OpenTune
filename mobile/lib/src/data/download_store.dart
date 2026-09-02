@@ -141,6 +141,11 @@ class DownloadStore extends ChangeNotifier {
         'Downloads must use a provider URL. OpenTune never fetches audio through the API.',
       );
     }
+    if (isYoutubeWatchUrl(url)) {
+      throw DownloadRejected(
+        'YouTube tracks are stream-only. OpenTune will not download or extract audio.',
+      );
+    }
     final existing = completed(trackId);
     if (existing != null) {
       return existing;

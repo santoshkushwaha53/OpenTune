@@ -8,6 +8,8 @@ import {
   JAMENDO_CAPABILITIES,
   JAMENDO_PROVIDER_SLUG,
   SEED_LICENSES,
+  YOUTUBE_CAPABILITIES,
+  YOUTUBE_PROVIDER_SLUG,
 } from "./seed-data.js";
 
 export async function seedCatalog(client: PrismaClient): Promise<void> {
@@ -27,19 +29,38 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
   }
 
   await client.provider.upsert({
+    where: { slug: YOUTUBE_PROVIDER_SLUG },
+    create: {
+      slug: YOUTUBE_PROVIDER_SLUG,
+      name: "YouTube",
+      isEnabled: false,
+      priority: 1,
+      capabilities: YOUTUBE_CAPABILITIES,
+      baseUrl: "https://www.googleapis.com/youtube/v3",
+      healthStatus: HealthStatus.unknown,
+    },
+    update: {
+      name: "YouTube",
+      priority: 1,
+      capabilities: YOUTUBE_CAPABILITIES,
+      baseUrl: "https://www.googleapis.com/youtube/v3",
+    },
+  });
+
+  await client.provider.upsert({
     where: { slug: AUDIUS_PROVIDER_SLUG },
     create: {
       slug: AUDIUS_PROVIDER_SLUG,
       name: "Audius",
       isEnabled: false,
-      priority: 1,
+      priority: 2,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://api.audius.co/v1",
       healthStatus: HealthStatus.unknown,
     },
     update: {
       name: "Audius",
-      priority: 1,
+      priority: 2,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://api.audius.co/v1",
     },
@@ -51,14 +72,14 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
       slug: JAMENDO_PROVIDER_SLUG,
       name: "Jamendo",
       isEnabled: false,
-      priority: 2,
+      priority: 3,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://api.jamendo.com/v3.0",
       healthStatus: HealthStatus.unknown,
     },
     update: {
       name: "Jamendo",
-      priority: 2,
+      priority: 3,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://api.jamendo.com/v3.0",
     },
@@ -70,14 +91,14 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
       slug: ARCHIVE_PROVIDER_SLUG,
       name: "Internet Archive",
       isEnabled: false,
-      priority: 3,
+      priority: 4,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://archive.org",
       healthStatus: HealthStatus.unknown,
     },
     update: {
       name: "Internet Archive",
-      priority: 3,
+      priority: 4,
       capabilities: JAMENDO_CAPABILITIES,
       baseUrl: "https://archive.org",
     },
@@ -89,7 +110,7 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
       slug: FMA_PROVIDER_SLUG,
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 4,
+      priority: 5,
       capabilities: FMA_CAPABILITIES,
       baseUrl: "https://freemusicarchive.org",
       healthStatus: HealthStatus.unknown,
@@ -97,7 +118,7 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
     update: {
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 4,
+      priority: 5,
       capabilities: FMA_CAPABILITIES,
       baseUrl: "https://freemusicarchive.org",
     },

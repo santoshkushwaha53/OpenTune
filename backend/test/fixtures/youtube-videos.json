@@ -1,0 +1,34 @@
+{
+  "items": [
+    {
+      "id": "OpenPulse11",
+      "snippet": {
+        "title": "Open Pulse (Official Audio)",
+        "channelTitle": "Open Desk",
+        "channelId": "UCOpenDesk01",
+        "publishedAt": "2019-06-01T00:00:00Z",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": { "url": "https://i.ytimg.com/vi/OpenPulse11/hqdefault.jpg" }
+        }
+      },
+      "contentDetails": { "duration": "PT3M0S" },
+      "status": { "embeddable": true }
+    },
+    {
+      "id": "ClosedCut11",
+      "snippet": {
+        "title": "Closed Cut",
+        "channelTitle": "Locked",
+        "channelId": "UCLocked001",
+        "publishedAt": "2020-01-01T00:00:00Z",
+        "liveBroadcastContent": "none",
+        "thumbnails": {
+          "high": { "url": "https://i.ytimg.com/vi/ClosedCut11/hqdefault.jpg" }
+        }
+      },
+      "contentDetails": { "duration": "PT2M0S" },
+      "status": { "embeddable": false }
+    }
+  ]
+}

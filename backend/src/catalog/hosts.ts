@@ -1,6 +1,7 @@
 import { ARCHIVE_HOST_ALLOWLIST } from "../providers/archive/licenses.js";
 import { AUDIUS_HOST_ALLOWLIST } from "../providers/audius/licenses.js";
 import { JAMENDO_HOST_ALLOWLIST } from "../providers/jamendo/licenses.js";
+import { YOUTUBE_HOST_ALLOWLIST } from "../providers/youtube/licenses.js";
 import { assertSafeProviderUrl } from "../security/url-allowlist.js";
 
 const EXTRA_HOSTS: Record<string, string[]> = {
@@ -16,6 +17,9 @@ export function hostAllowlistForProvider(slug: string): string[] {
   }
   if (slug === "archive") {
     return ARCHIVE_HOST_ALLOWLIST;
+  }
+  if (slug === "youtube") {
+    return YOUTUBE_HOST_ALLOWLIST;
   }
   return EXTRA_HOSTS[slug] ?? [];
 }

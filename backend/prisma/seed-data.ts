@@ -40,8 +40,17 @@ export const SEED_LICENSES: readonly SeedLicense[] = [
 
 export const JAMENDO_PROVIDER_SLUG = "jamendo";
 export const AUDIUS_PROVIDER_SLUG = "audius";
+export const YOUTUBE_PROVIDER_SLUG = "youtube";
 export const ARCHIVE_PROVIDER_SLUG = "archive";
 export const FMA_PROVIDER_SLUG = "fma";
+
+export const YOUTUBE_CAPABILITIES = {
+  supportsStreaming: true,
+  supportsDownload: false,
+  supportsOffline: false,
+  supportsRedistribution: false,
+  requiresAttribution: true,
+} as const;
 
 export const JAMENDO_CAPABILITIES = {
   supportsStreaming: true,

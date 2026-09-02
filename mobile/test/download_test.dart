@@ -91,6 +91,33 @@ void main() {
   });
 
   test(
+    'refuses YouTube watch URLs instead of downloading video bytes',
+    () async {
+      var fetched = false;
+      final downloads = store(
+        transport:
+            ({
+              required url,
+              required savePath,
+              required onProgress,
+              required cancelToken,
+            }) async {
+              fetched = true;
+            },
+      );
+      expect(
+        () => downloads.enqueue(
+          trackId: '33333333-3333-3333-3333-333333333333',
+          title: 'Open Pulse',
+          url: 'https://www.youtube.com/watch?v=OpenPulse11',
+        ),
+        throwsA(isA<DownloadRejected>()),
+      );
+      expect(fetched, isFalse);
+    },
+  );
+
+  test(
     'stores the file on device with license snapshot and reloads the index',
     () async {
       const id = '11111111-1111-1111-1111-111111111111';

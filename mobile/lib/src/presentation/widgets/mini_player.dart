@@ -20,7 +20,11 @@ class MiniPlayer extends ConsumerWidget {
         onTap: () => context.push('/player'),
         leading: const Icon(Icons.album),
         title: Text(track.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-        subtitle: Text(track.artistName ?? 'Unknown artist'),
+        subtitle: Text(
+          player.isYoutube
+              ? '${track.artistName ?? 'Unknown artist'} · YouTube'
+              : track.artistName ?? 'Unknown artist',
+        ),
         trailing: IconButton(
           icon: Icon(player.playing ? Icons.pause : Icons.play_arrow),
           onPressed: player.togglePlay,

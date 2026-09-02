@@ -5,6 +5,7 @@ import { AudiusProvider } from "../providers/audius/AudiusProvider.js";
 import { FakeProvider } from "../providers/fake/FakeProvider.js";
 import { FmaProvider } from "../providers/fma/FmaProvider.js";
 import { JamendoProvider } from "../providers/jamendo/JamendoProvider.js";
+import { YoutubeProvider } from "../providers/youtube/YoutubeProvider.js";
 import { providerRegistry } from "../providers/core/registry.js";
 
 const openCatalogCapabilities = {
@@ -23,6 +24,14 @@ const fmaCapabilities = {
   requiresAttribution: true,
 };
 
+const youtubeCapabilities = {
+  supportsStreaming: true,
+  supportsDownload: false,
+  supportsOffline: false,
+  supportsRedistribution: false,
+  requiresAttribution: true,
+};
+
 function testOnlyArchiveFetch(): typeof fetch {
   return async () => {
     throw new Error("Internet Archive is not called in automated tests");
@@ -33,6 +42,7 @@ export async function bootstrapProviders(env: Env): Promise<void> {
   if (env.NODE_ENV === "test") {
     providerRegistry.register(new FakeProvider());
   }
+  providerRegistry.register(new YoutubeProvider(env.YOUTUBE_API_KEY ?? ""));
   providerRegistry.register(new AudiusProvider(env.AUDIUS_API_KEY ?? ""));
   providerRegistry.register(new JamendoProvider(env.JAMENDO_CLIENT_ID ?? ""));
   providerRegistry.register(
@@ -56,18 +66,35 @@ export async function bootstrapProviders(env: Env): Promise<void> {
   }
 
   await prisma.provider.upsert({
+    where: { slug: "youtube" },
+    create: {
+      slug: "youtube",
+      name: "YouTube",
+      isEnabled: Boolean(env.YOUTUBE_API_KEY),
+      priority: 1,
+      capabilities: youtubeCapabilities,
+      baseUrl: "https://www.googleapis.com/youtube/v3",
+    },
+    update: {
+      isEnabled: env.YOUTUBE_API_KEY ? true : undefined,
+      priority: 1,
+      capabilities: youtubeCapabilities,
+    },
+  });
+
+  await prisma.provider.upsert({
     where: { slug: "audius" },
     create: {
       slug: "audius",
       name: "Audius",
       isEnabled: Boolean(env.AUDIUS_API_KEY),
-      priority: 1,
+      priority: 2,
       capabilities: openCatalogCapabilities,
       baseUrl: "https://api.audius.co/v1",
     },
     update: {
       isEnabled: env.AUDIUS_API_KEY ? true : undefined,
-      priority: 1,
+      priority: 2,
       capabilities: openCatalogCapabilities,
     },
   });
@@ -78,13 +105,13 @@ export async function bootstrapProviders(env: Env): Promise<void> {
       slug: "jamendo",
       name: "Jamendo",
       isEnabled: Boolean(env.JAMENDO_CLIENT_ID),
-      priority: 2,
+      priority: 3,
       capabilities: openCatalogCapabilities,
       baseUrl: "https://api.jamendo.com/v3.0",
     },
     update: {
       isEnabled: env.JAMENDO_CLIENT_ID ? true : undefined,
-      priority: 2,
+      priority: 3,
       capabilities: openCatalogCapabilities,
     },
   });
@@ -97,13 +124,13 @@ export async function bootstrapProviders(env: Env): Promise<void> {
       slug: "archive",
       name: "Internet Archive",
       isEnabled: archiveEnabled,
-      priority: 3,
+      priority: 4,
       capabilities: openCatalogCapabilities,
       baseUrl: "https://archive.org",
     },
     update: {
       isEnabled: archiveEnabled,
-      priority: 3,
+      priority: 4,
       capabilities: openCatalogCapabilities,
     },
   });
@@ -114,13 +141,13 @@ export async function bootstrapProviders(env: Env): Promise<void> {
       slug: "fma",
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 4,
+      priority: 5,
       capabilities: fmaCapabilities,
       baseUrl: "https://freemusicarchive.org",
     },
     update: {
       isEnabled: false,
-      priority: 4,
+      priority: 5,
       capabilities: fmaCapabilities,
     },
   });

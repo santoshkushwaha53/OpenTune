@@ -1,6 +1,6 @@
 # Free Music Archive (disabled)
 
-FMA is **priority 4** in the Sohum source router but is not a live catalog.
+FMA is **priority 5** in the Sohum source router but is not a live catalog.
 
 [FMA’s developer policy](https://freemusicarchive.org/app-developers) states that:
 

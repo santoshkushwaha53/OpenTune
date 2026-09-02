@@ -24,7 +24,7 @@ export async function persistProviderTrack(providerSlug: string, track: Provider
       allowsStreaming: track.license.allowsStreaming,
       allowsDownload: track.license.allowsDownload,
       requiresAttribution: track.license.requiresAttribution,
-      allowsRedistribution: true,
+      allowsRedistribution: track.license.allowsDownload,
     },
     update: {},
   });

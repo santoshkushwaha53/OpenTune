@@ -1,14 +1,123 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 
 import '../../application/player_controller.dart';
 import '../widgets/license_sheet.dart';
 
-class PlayerScreen extends ConsumerWidget {
+class PlayerScreen extends ConsumerStatefulWidget {
   const PlayerScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PlayerScreen> createState() => _PlayerScreenState();
+}
+
+class _PlayerScreenState extends ConsumerState<PlayerScreen>
+    implements YoutubePlaybackHost {
+  YoutubePlayerController? _youtube;
+  StreamSubscription<YoutubePlayerValue>? _youtubeValues;
+  StreamSubscription<YoutubeVideoState>? _youtubeProgress;
+  var _endedHandled = false;
+  PlayerController? _player;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      _player = ref.read(playerControllerProvider);
+      _player!.youtubeHost = this;
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_player?.youtubeHost == this) {
+      _player!.youtubeHost = null;
+    }
+    _youtubeValues?.cancel();
+    _youtubeProgress?.cancel();
+    _youtube?.close();
+    super.dispose();
+  }
+
+  @override
+  Future<void> load(String videoId) async {
+    _endedHandled = false;
+    if (_youtube == null) {
+      final controller = YoutubePlayerController(
+        params: const YoutubePlayerParams(
+          mute: false,
+          showFullscreenButton: true,
+          strictRelatedVideos: true,
+        ),
+      );
+      _bindYoutube(controller);
+      _youtube = controller;
+      if (mounted) {
+        setState(() {});
+      }
+    }
+    await _youtube!.loadVideoById(videoId: videoId);
+  }
+
+  void _bindYoutube(YoutubePlayerController controller) {
+    _youtubeValues?.cancel();
+    _youtubeProgress?.cancel();
+    _youtubeValues = controller.listen((value) {
+      final player = ref.read(playerControllerProvider);
+      if (value.playerState == PlayerState.ended && !_endedHandled) {
+        _endedHandled = true;
+        player.next();
+        return;
+      }
+      if (value.playerState == PlayerState.playing) {
+        _endedHandled = false;
+        player.syncEngine(
+          playing: true,
+          duration: value.metaData.duration == Duration.zero
+              ? null
+              : value.metaData.duration,
+        );
+      } else if (value.playerState == PlayerState.paused) {
+        player.syncEngine(playing: false);
+      }
+    });
+    _youtubeProgress = controller.videoStateStream.listen((state) {
+      final player = ref.read(playerControllerProvider);
+      final trackDuration = player.current?.durationMs ?? 0;
+      player.syncEngine(
+        position: state.position,
+        duration: trackDuration > 0
+            ? Duration(milliseconds: trackDuration)
+            : player.duration,
+      );
+    });
+  }
+
+  @override
+  Future<void> play() => _youtube?.playVideo() ?? Future.value();
+
+  @override
+  Future<void> pause() => _youtube?.pauseVideo() ?? Future.value();
+
+  @override
+  Future<void> seek(Duration position) =>
+      _youtube?.seekTo(
+        seconds: position.inMilliseconds / 1000,
+        allowSeekAhead: true,
+      ) ??
+      Future.value();
+
+  @override
+  Future<void> stop() => _youtube?.stopVideo() ?? Future.value();
+
+  @override
+  Widget build(BuildContext context) {
     final controller = ref.watch(playerControllerProvider);
     final track = controller.current;
     final item = controller.currentItem;
@@ -16,6 +125,7 @@ class PlayerScreen extends ConsumerWidget {
         ? 1
         : controller.duration.inMilliseconds;
     final posMs = controller.position.inMilliseconds.clamp(0, maxMs);
+    final youtube = _youtube;
     return Scaffold(
       appBar: AppBar(title: const Text('Now playing')),
       body: SingleChildScrollView(
@@ -23,11 +133,14 @@ class PlayerScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Icon(
-              Icons.album,
-              size: 140,
-              color: Theme.of(context).colorScheme.primary,
-            ),
+            if (controller.isYoutube && youtube != null)
+              YoutubePlayer(controller: youtube, aspectRatio: 16 / 9)
+            else
+              Icon(
+                Icons.album,
+                size: 140,
+                color: Theme.of(context).colorScheme.primary,
+              ),
             const SizedBox(height: 32),
             Text(
               track?.title ?? 'Nothing playing',
@@ -36,7 +149,9 @@ class PlayerScreen extends ConsumerWidget {
             Text(track?.artistName ?? ''),
             const SizedBox(height: 8),
             Text(
-              controller.usingLocalFile
+              controller.isYoutube
+                  ? 'Streaming in YouTube’s player. Download is not available.'
+                  : controller.usingLocalFile
                   ? 'Playing from this device'
                   : 'Streaming from the provider URL',
               style: Theme.of(context).textTheme.bodySmall,
@@ -132,7 +247,7 @@ class PlayerScreen extends ConsumerWidget {
               ),
             const SizedBox(height: 16),
             Text(
-              'Audio is loaded from the provider URL or a local download. OpenTune never proxies files.',
+              'YouTube plays in YouTube’s official player. Other catalogs stream from the provider URL. OpenTune never proxies files.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

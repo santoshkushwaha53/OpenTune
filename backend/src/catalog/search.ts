@@ -25,6 +25,7 @@ export async function searchCatalog(
     orderBy: { priority: "asc" },
   });
   const seen = new Set<string>();
+  const streamPlatform = [];
   const downloadable = [];
   const listenOnly = [];
 
@@ -37,6 +38,18 @@ export async function searchCatalog(
     try {
       hits = await provider.search(q, { limit, yearFrom, yearTo });
     } catch {
+      continue;
+    }
+    if (
+      provider.capabilities.supportsStreaming &&
+      !provider.capabilities.supportsDownload
+    ) {
+      for (const hit of hits) {
+        const serialized = await persistHit(row.slug, hit, seen);
+        if (serialized) {
+          streamPlatform.push(serialized);
+        }
+      }
       continue;
     }
     const partitioned = partitionByDownloadRights(hits);
@@ -60,9 +73,9 @@ export async function searchCatalog(
     }
   }
 
-  const providerResults = [...downloadable, ...listenOnly].slice(0, limit);
-  const rankedIds = await rankTrackIds(providerResults.map((item) => item.id));
-  const results = orderByRank(providerResults, rankedIds);
+  const rest = [...downloadable, ...listenOnly];
+  const rankedIds = await rankTrackIds(rest.map((item) => item.id));
+  const results = [...streamPlatform, ...orderByRank(rest, rankedIds)].slice(0, limit);
 
   if (results.length < limit && q.length > 0) {
     const local = await searchPersistedCatalog(q, {

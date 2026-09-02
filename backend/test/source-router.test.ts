@@ -95,11 +95,12 @@ describe("fma connector", () => {
 });
 
 describe("sohum source router", () => {
-  it("orders Audius before Jamendo, Internet Archive, and FMA", () => {
-    expect(SOURCE_ROUTER_PRIORITY.audius).toBe(1);
-    expect(SOURCE_ROUTER_PRIORITY.jamendo).toBe(2);
-    expect(SOURCE_ROUTER_PRIORITY.archive).toBe(3);
-    expect(SOURCE_ROUTER_PRIORITY.fma).toBe(4);
+  it("orders YouTube, then Audius, Jamendo, Internet Archive, and FMA", () => {
+    expect(SOURCE_ROUTER_PRIORITY.youtube).toBe(1);
+    expect(SOURCE_ROUTER_PRIORITY.audius).toBe(2);
+    expect(SOURCE_ROUTER_PRIORITY.jamendo).toBe(3);
+    expect(SOURCE_ROUTER_PRIORITY.archive).toBe(4);
+    expect(SOURCE_ROUTER_PRIORITY.fma).toBe(5);
   });
 
   it("prefers downloadable hits and skips listen-only to the next source", () => {

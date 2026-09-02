@@ -17,6 +17,7 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(1000).default(60_000),
   JAMENDO_CLIENT_ID: z.string().optional().default(""),
   AUDIUS_API_KEY: z.string().optional().default(""),
+  YOUTUBE_API_KEY: z.string().optional().default(""),
   INTERNET_ARCHIVE_ENABLED: z.string().optional().default("true"),
   OPERATOR_TOKEN: z
     .string()

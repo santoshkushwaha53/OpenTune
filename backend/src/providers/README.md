@@ -11,12 +11,13 @@ Connectors implement `MusicProvider` under `core/types.ts`. The Fastify API neve
 | `core/capabilities.ts` | Stream/download permission helpers                     |
 | `core/errors.ts`       | `ProviderError`, `ProviderCapabilityError`             |
 | `fake/FakeProvider.ts` | Test catalog (downloadable + stream-only tracks)       |
-| `audius/`              | Official Audius API (priority 1, CC stream + download) |
-| `jamendo/`             | Official Jamendo API (priority 2)                      |
-| `archive/`             | Official Internet Archive search/metadata (priority 3, CC/PD audio only) |
+| `youtube/`             | Official YouTube Data API (priority 1, stream in YouTube player, no download) |
+| `audius/`              | Official Audius API (priority 2, CC stream + download) |
+| `jamendo/`             | Official Jamendo API (priority 3)                      |
+| `archive/`             | Official Internet Archive search/metadata (priority 4, CC/PD audio only) |
 | `fma/`                 | Disabled slot — FMA retired its API; no scrape         |
 
-Search walks enabled connectors in **priority order**. Download-allowed hits fill the list first; listen-only rows are kept only if the catalog would otherwise be empty of those query matches. `permittedDownloadSource()` still returns `null` for stream-only tracks.
+Search walks enabled connectors in **priority order**. YouTube (stream-only) results are listed first when that provider is enabled. Download-allowed open-catalog hits fill the rest. `permittedDownloadSource()` still returns `null` for stream-only tracks.
 
 Operator `POST /providers/:slug/sync` with `query=*` seeds scene queries (Bollywood, Hindi, jazz, …) as **metadata**. Playback URLs are still resolved per request.
 

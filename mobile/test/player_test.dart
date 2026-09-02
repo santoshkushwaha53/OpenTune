@@ -35,9 +35,14 @@ void main() {
       isFalse,
     );
     expect(
-      isRemoteProviderUrl('https://mp3d.jamendo.com/download/track/1/mp32'),
+      isRemoteProviderUrl('https://www.youtube.com/watch?v=OpenPulse11'),
       isTrue,
     );
+    expect(
+      youtubeVideoId('https://www.youtube.com/watch?v=OpenPulse11'),
+      'OpenPulse11',
+    );
+    expect(isYoutubeWatchUrl('https://cdn.example/horizon.mp3'), isFalse);
   });
 
   test(
@@ -108,6 +113,22 @@ void main() {
       player.dispose();
     },
   );
+
+  test('queues YouTube watch URLs as stream-only in-app playback', () async {
+    final player = PlayerController(
+      downloads: DownloadStore(),
+      api: ApiClient(baseUrl: 'http://127.0.0.1:9'),
+      enableEngine: false,
+    );
+    await player.playTrack(
+      track: _horizon,
+      url: 'https://www.youtube.com/watch?v=OpenPulse11',
+    );
+    expect(player.current?.id, _horizon.id);
+    expect(player.isYoutube, isTrue);
+    expect(player.currentYoutubeVideoId, 'OpenPulse11');
+    player.dispose();
+  });
 
   test(
     'playMix stores a temp queue and hydrates the provider source',
