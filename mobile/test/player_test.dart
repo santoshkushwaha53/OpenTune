@@ -108,4 +108,40 @@ void main() {
       player.dispose();
     },
   );
+
+  test(
+    'playMix stores a temp queue and hydrates the provider source',
+    () async {
+      final player = PlayerController(
+        downloads: DownloadStore(),
+        api: _MixApi(),
+        enableEngine: false,
+      );
+      await player.playMix(track: _horizon, mix: [_horizon, _harbor]);
+      expect(player.current?.id, _horizon.id);
+      expect(player.queue.items.length, 2);
+      expect(player.sourceUrl, 'https://cdn.example/horizon.mp3');
+      player.dispose();
+    },
+  );
+}
+
+class _MixApi extends ApiClient {
+  _MixApi() : super(baseUrl: 'http://127.0.0.1:9');
+
+  @override
+  Future<Map<String, dynamic>> trackSources(String id) async {
+    return {
+      'sources': [
+        {
+          'playbackUrl': id == _horizon.id
+              ? 'https://cdn.example/horizon.mp3'
+              : 'https://cdn.example/harbor.mp3',
+        },
+      ],
+    };
+  }
+
+  @override
+  Future<void> recordPlay(String trackId) async {}
 }

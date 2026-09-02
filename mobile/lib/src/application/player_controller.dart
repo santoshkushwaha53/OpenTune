@@ -65,7 +65,7 @@ class PlayerController extends ChangeNotifier {
     if (offlineOnly && local == null) {
       return;
     }
-    if (local == null && !isRemoteProviderUrl(url)) {
+    if (local == null && url.isNotEmpty && !isRemoteProviderUrl(url)) {
       return;
     }
     final item = QueuedItem(
@@ -87,11 +87,33 @@ class PlayerController extends ChangeNotifier {
     await _loadCurrent();
   }
 
+  /// Queue a mix (temp session) and play [track]. URLs stay off the UI.
+  Future<void> playMix({
+    required TrackSummary track,
+    List<TrackSummary> mix = const [],
+  }) async {
+    final list = mix.isEmpty ? [track] : mix;
+    final queued = [
+      for (final item in list)
+        QueuedItem(
+          track: item,
+          url: _downloads.completed(item.id)?.path ?? '',
+          license: item.spdxId,
+          localFile: _downloads.completed(item.id) != null,
+        ),
+    ];
+    queue.setQueue(queued, playingId: track.id);
+    playing = true;
+    notifyListeners();
+    await _loadCurrent();
+  }
+
   Future<void> _loadCurrent() async {
-    final item = currentItem;
-    if (item == null) {
+    final raw = currentItem;
+    if (raw == null) {
       return;
     }
+    final item = await _hydrate(raw);
     if (!_canPlay(item)) {
       return;
     }
@@ -182,6 +204,65 @@ class PlayerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<QueuedItem> _hydrate(QueuedItem item) async {
+    final local = _downloads.completed(item.track.id);
+    if (local != null) {
+      final next = QueuedItem(
+        track: item.track,
+        url: local.path,
+        license: item.license ?? local.license,
+        attribution: item.attribution ?? local.attribution,
+        licenseUrl: item.licenseUrl,
+        localFile: true,
+      );
+      _replaceCurrent(next);
+      return next;
+    }
+    if (item.url.isNotEmpty && isRemoteProviderUrl(item.url)) {
+      return item;
+    }
+    if (_offline?.offline == true) {
+      return item;
+    }
+    try {
+      final payload = await _api.trackSources(item.track.id);
+      final list = payload['sources'] as List<dynamic>? ?? [];
+      Map<String, dynamic>? source;
+      for (final row in list) {
+        if (row is Map<String, dynamic>) {
+          source = row;
+          break;
+        } else if (row is Map) {
+          source = Map<String, dynamic>.from(row);
+          break;
+        }
+      }
+      final url = source?['playbackUrl'] as String?;
+      if (url == null || !isRemoteProviderUrl(url)) {
+        return item;
+      }
+      final license = source?['license'] as Map<String, dynamic>?;
+      final next = QueuedItem(
+        track: item.track,
+        url: url,
+        license: license?['spdxId'] as String? ?? item.license,
+        attribution: source?['attributionText'] as String? ?? item.attribution,
+        licenseUrl: license?['url'] as String? ?? item.licenseUrl,
+      );
+      _replaceCurrent(next);
+      return next;
+    } catch (_) {
+      return item;
+    }
+  }
+
+  void _replaceCurrent(QueuedItem item) {
+    if (queue.items.isEmpty) {
+      return;
+    }
+    queue.items[queue.index.clamp(0, queue.items.length - 1)] = item;
+  }
+
   bool _canPlay(QueuedItem item) {
     if (item.localFile || _downloads.completed(item.track.id) != null) {
       return true;
@@ -199,9 +280,9 @@ class PlayerController extends ChangeNotifier {
         return;
       }
       queue.index = next;
-      if (_canPlay(queue.current!)) {
-        notifyListeners();
-        await _loadCurrent();
+      notifyListeners();
+      await _loadCurrent();
+      if (queue.current != null && _canPlay(queue.current!)) {
         return;
       }
     }
@@ -214,9 +295,9 @@ class PlayerController extends ChangeNotifier {
         return;
       }
       queue.index = prev;
-      if (_canPlay(queue.current!)) {
-        notifyListeners();
-        await _loadCurrent();
+      notifyListeners();
+      await _loadCurrent();
+      if (queue.current != null && _canPlay(queue.current!)) {
         return;
       }
     }

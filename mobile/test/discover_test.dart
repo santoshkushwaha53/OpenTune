@@ -13,6 +13,7 @@ const _horizon = TrackSummary(
   artistId: 'a',
   artistName: 'Northwind',
   year: 2018,
+  download: true,
 );
 
 class _DiscoverApi extends ApiClient {
@@ -78,7 +79,12 @@ void main() {
 
     expect(find.text('Songs'), findsWidgets);
     expect(find.text('Singers'), findsWidgets);
+    expect(find.text('1 song'), findsOneWidget);
     expect(find.text('Open Horizon'), findsWidgets);
+    expect(find.text('01'), findsOneWidget);
+    expect(find.byTooltip('Play'), findsWidgets);
+    expect(find.byTooltip('Download'), findsWidgets);
+    expect(find.textContaining('http'), findsNothing);
 
     await tester.tap(find.text('Singers'));
     await tester.pump();

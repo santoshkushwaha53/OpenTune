@@ -167,7 +167,9 @@ void main() {
       await tester.tap(find.byIcon(Icons.search));
       await tester.pumpAndSettle();
       expect(find.text('Harbor Lights'), findsWidgets);
-      expect(find.text('Download unavailable'), findsWidgets);
+      expect(find.byTooltip('Play'), findsWidgets);
+      expect(find.byTooltip('Listen only'), findsWidgets);
+      expect(find.textContaining('http'), findsNothing);
     },
   );
 

@@ -13,7 +13,7 @@ import '../theme/tokens.dart';
 import '../widgets/cover_art.dart';
 import '../widgets/empty_state.dart';
 import '../widgets/offline_banner.dart';
-import '../widgets/track_tile.dart';
+import '../widgets/song_row.dart';
 
 enum _DiscoverTab { songs, artists }
 
@@ -309,9 +309,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           message: 'Try another scene, singer, or year.',
         );
       }
+      final label = _results.length == 1
+          ? '1 song'
+          : '${_results.length} songs';
       return ListView.builder(
-        itemCount: _results.length,
-        itemBuilder: (context, index) => TrackTile(track: _results[index]),
+        padding: const EdgeInsets.only(bottom: 24),
+        itemCount: _results.length + 1,
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+              child: Text(
+                label,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            );
+          }
+          final track = _results[index - 1];
+          return SongRow(index: index, track: track, mix: _results);
+        },
       );
     }
 
@@ -357,7 +375,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
-          for (final track in _trending.take(6)) TrackTile(track: track),
+          for (var i = 0; i < _trending.take(6).length; i++)
+            SongRow(
+              index: i + 1,
+              track: _trending[i],
+              mix: _trending.take(6).toList(),
+            ),
         ],
       ],
     );
