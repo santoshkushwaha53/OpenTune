@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 abstract final class OpenTuneTokens {
   static const seed = Color(0xFF8EA2FF);
   static const glow = Color(0xFFC9B7FF);
+  static const teal = Color(0xFF5EEAD4);
+  static const violet = Color(0xFFA78BFA);
   static const night = Color(0xFF0B0D12);
   static const surface = Color(0xFF12141C);
   static const surfaceHigh = Color(0xFF1A1D28);

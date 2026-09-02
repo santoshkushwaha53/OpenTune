@@ -14,6 +14,8 @@ Resolved URLs are not written to PostgreSQL.
 
 Discovery ranking (Phase 16) reorders these metadata results. It never fetches audio.
 
+Onboarding recommendations rank catalog metadata using artist / category / language / mood weights, then **verify** a permitted provider download URL exists. The API still never returns audio bytes.
+
 Provider health (Phase 17) can disable a connector after repeated `healthCheck` failures. Disabled providers are omitted from this search loop. Catalog sync uses the same persist path and never writes audio URLs.
 
 Load tests (Phase 19) hammer search and `/tracks/:id/sources` concurrently. They never request audio bytes. Query indexes are listed in `docs/PERFORMANCE.md`.

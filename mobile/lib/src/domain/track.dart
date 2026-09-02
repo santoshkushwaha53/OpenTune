@@ -59,9 +59,15 @@ class TrackSummary {
   };
 
   static List<TrackSummary> listFrom(dynamic raw) {
-    return (raw as List<dynamic>? ?? [])
-        .whereType<Map<String, dynamic>>()
-        .map(TrackSummary.fromJson)
-        .toList();
+    final list = raw is List ? raw : const [];
+    final out = <TrackSummary>[];
+    for (final row in list) {
+      if (row is Map<String, dynamic>) {
+        out.add(TrackSummary.fromJson(row));
+      } else if (row is Map) {
+        out.add(TrackSummary.fromJson(Map<String, dynamic>.from(row)));
+      }
+    }
+    return out;
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../data/session_store.dart';
 
@@ -69,7 +70,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         .read(sessionStoreProvider)
                         .login(email.text.trim(), password.text);
                   }
-                  if (context.mounted) Navigator.of(context).pop();
+                  if (context.mounted) {
+                    final session = ref.read(sessionStoreProvider);
+                    if (!session.onboardingCompleted) {
+                      context.go('/onboarding');
+                    } else {
+                      Navigator.of(context).pop();
+                    }
+                  }
                 } catch (_) {
                   setState(
                     () => error =

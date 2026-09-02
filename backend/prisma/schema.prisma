@@ -94,8 +94,75 @@ model User {
   artistFollows  ArtistFollow[]
   reports        Report[]
   playlistShares PlaylistShare[]
+  preference     UserPreference?
 
   @@map("users")
+}
+
+/// Listening taste for ranking. Never stores audio URLs or media bytes.
+model UserPreference {
+  userId                       String    @id @map("user_id") @db.Uuid
+  languageMode                 String    @default("prefer") @map("language_mode")
+  wifiOnlyDownloads            Boolean   @default(true) @map("wifi_only_downloads")
+  autoDownloadRecommendations  Boolean   @default(false) @map("auto_download_recommendations")
+  downloadStarterPack          Boolean   @default(true) @map("download_starter_pack")
+  onboardingCompleted          Boolean   @default(false) @map("onboarding_completed")
+  onboardingCompletedAt        DateTime? @map("onboarding_completed_at") @db.Timestamptz
+  onboardingVersion            Int       @default(0) @map("onboarding_version")
+  /// Track ids from the last confirmed starter pack (metadata refs only).
+  starterTrackIds              String[]  @default([]) @map("starter_track_ids") @db.Uuid
+  createdAt                    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user       User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artists    UserFavoriteArtist[]
+  categories UserFavoriteCategory[]
+  languages  UserPreferredLanguage[]
+  moods      UserPreferredMood[]
+
+  @@map("user_preferences")
+}
+
+model UserFavoriteArtist {
+  userId   String @map("user_id") @db.Uuid
+  artistId String @map("artist_id") @db.Uuid
+
+  preference UserPreference @relation(fields: [userId], references: [userId], onDelete: Cascade)
+  artist     Artist         @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([userId, artistId])
+  @@index([artistId])
+  @@map("user_favorite_artists")
+}
+
+model UserFavoriteCategory {
+  userId       String @map("user_id") @db.Uuid
+  categorySlug String @map("category_slug")
+
+  preference UserPreference @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, categorySlug])
+  @@map("user_favorite_categories")
+}
+
+model UserPreferredLanguage {
+  userId       String @map("user_id") @db.Uuid
+  languageCode String @map("language_code")
+
+  preference UserPreference @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, languageCode])
+  @@map("user_preferred_languages")
+}
+
+model UserPreferredMood {
+  userId   String @map("user_id") @db.Uuid
+  moodSlug String @map("mood_slug")
+
+  preference UserPreference @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+  @@id([userId, moodSlug])
+  @@map("user_preferred_moods")
 }
 
 model UserSession {
@@ -165,6 +232,7 @@ model Artist {
   trackArtists TrackArtist[]
   albumArtists AlbumArtist[]
   follows      ArtistFollow[]
+  favoriteBy   UserFavoriteArtist[]
 
   @@map("artists")
 }

@@ -164,4 +164,33 @@ void main() {
     expect(File(record.path).existsSync(), isFalse);
     expect(downloads.isOffline(id), isFalse);
   });
+
+  test('starter pack queues only download-eligible tracks', () async {
+    const id = '11111111-1111-1111-1111-111111111111';
+    final downloads = store();
+    await downloads.startStarterPack(
+      tracks: const [
+        TrackSummary(
+          id: id,
+          title: 'Open Horizon',
+          durationMs: 1,
+          download: true,
+        ),
+        TrackSummary(
+          id: '22222222-2222-2222-2222-222222222222',
+          title: 'Harbor Lights',
+          durationMs: 1,
+          download: false,
+        ),
+      ],
+      resolveUrl: (trackId) async =>
+          'https://example.invalid/download/$trackId.mp3',
+    );
+    expect(downloads.packTrackIds, [id]);
+    expect(downloads.isOffline(id), isTrue);
+    expect(
+      downloads.isOffline('22222222-2222-2222-2222-222222222222'),
+      isFalse,
+    );
+  });
 }

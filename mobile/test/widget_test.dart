@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:opentune/src/application/player_controller.dart';
 import 'package:opentune/src/data/api_client.dart';
+import 'package:opentune/src/data/session_store.dart';
 import 'package:opentune/src/data/download_store.dart';
 import 'package:opentune/src/domain/track.dart';
 import 'package:opentune/src/presentation/app.dart';
@@ -108,11 +109,12 @@ class _CatalogApiClient extends _EmptyApiClient {
 
 void main() {
   setUp(() {
+    onboardingGate.reset();
     appRouter.go('/home');
   });
 
   testWidgets(
-    'shows Home/Discover/Library shell, offline banner, and empty catalog',
+    'shows Home/Discover/Library shell and a music-first empty Home',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -126,13 +128,15 @@ void main() {
       expect(find.text('Home'), findsWidgets);
       expect(find.text('Discover'), findsWidgets);
       expect(find.text('Library'), findsWidgets);
-      expect(find.textContaining('Offline mode'), findsOneWidget);
-      expect(find.text('No catalog yet'), findsOneWidget);
+      expect(find.text('Press play'), findsOneWidget);
+      expect(find.text('Explore'), findsOneWidget);
+      expect(find.textContaining('Offline mode'), findsNothing);
+      expect(find.text('No catalog yet'), findsNothing);
     },
   );
 
   testWidgets(
-    'home shelves show availability badges and Discover search uses them',
+    'home shelves are artwork-first; Discover search still shows availability',
     (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -145,10 +149,9 @@ void main() {
 
       expect(find.text('For you'), findsOneWidget);
       expect(find.text('Open Horizon'), findsWidgets);
-      expect(find.text('Stream'), findsWidgets);
-      expect(find.text('Download'), findsWidgets);
-      expect(find.text('Download unavailable'), findsWidgets);
-      expect(find.text('Attribution required'), findsWidgets);
+      expect(find.text('Play'), findsWidgets);
+      expect(find.text('Stream'), findsNothing);
+      expect(find.text('Download unavailable'), findsNothing);
       expect(find.widgetWithText(ActionChip, 'harbor'), findsOneWidget);
 
       await tester.tap(find.widgetWithText(ActionChip, 'harbor'));
@@ -263,9 +266,9 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('On this device'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Open Horizon'), findsWidgets);
-    expect(find.text('Available offline'), findsWidgets);
+    expect(find.text('Play'), findsWidgets);
 
     expect(find.text('Library'), findsWidgets);
     await tester.tap(find.text('Library'));

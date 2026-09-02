@@ -143,7 +143,7 @@ describe("search and discovery", () => {
 
     const home = await app.inject({ method: "GET", url: "/api/v1/discovery/home" });
     expect(home.statusCode).toBe(200);
-    expect(home.json().greeting).toContain("open");
+    expect(home.json().greeting).toMatch(/open|Good /);
 
     const trending = await app.inject({
       method: "GET",

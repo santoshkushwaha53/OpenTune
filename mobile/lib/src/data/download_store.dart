@@ -245,6 +245,128 @@ class DownloadStore extends ChangeNotifier {
     _cancels[trackId]?.cancel('cancelled');
   }
 
+  bool packPaused = false;
+  bool packRunning = false;
+  bool wifiOnlyDownloads = true;
+  String? packCurrentTitle;
+  final List<String> packTrackIds = [];
+
+  int get packCompletedCount => packTrackIds
+      .where((id) => _items[id]?.state == DownloadState.completed)
+      .length;
+
+  int get packFailedCount => packTrackIds
+      .where((id) => _items[id]?.state == DownloadState.failed)
+      .length;
+
+  double get packProgress {
+    if (packTrackIds.isEmpty) {
+      return 0;
+    }
+    var sum = 0.0;
+    for (final id in packTrackIds) {
+      sum += progressFor(id);
+    }
+    return sum / packTrackIds.length;
+  }
+
+  /// Sequential provider downloads. Home can show progress immediately.
+  Future<void> startStarterPack({
+    required List<TrackSummary> tracks,
+    required Future<String?> Function(String trackId) resolveUrl,
+    bool wifiOnly = true,
+  }) async {
+    packPaused = false;
+    packRunning = true;
+    wifiOnlyDownloads = wifiOnly;
+    packTrackIds
+      ..clear()
+      ..addAll(
+        tracks.where((track) => track.download).map((track) => track.id),
+      );
+    notifyListeners();
+    await _runPack(tracks: tracks, resolveUrl: resolveUrl, wifiOnly: wifiOnly);
+  }
+
+  Future<void> pausePack() async {
+    packPaused = true;
+    for (final id in packTrackIds) {
+      if (_items[id]?.state == DownloadState.downloading) {
+        await cancel(id);
+      }
+    }
+    notifyListeners();
+  }
+
+  Future<void> resumePack({
+    required List<TrackSummary> tracks,
+    required Future<String?> Function(String trackId) resolveUrl,
+    bool wifiOnly = true,
+  }) async {
+    packPaused = false;
+    packRunning = true;
+    notifyListeners();
+    await _runPack(tracks: tracks, resolveUrl: resolveUrl, wifiOnly: wifiOnly);
+  }
+
+  Future<void> _runPack({
+    required List<TrackSummary> tracks,
+    required Future<String?> Function(String trackId) resolveUrl,
+    required bool wifiOnly,
+  }) async {
+    wifiOnlyDownloads = wifiOnly;
+    try {
+      for (final track in tracks) {
+        if (packPaused) {
+          break;
+        }
+        if (!track.download) {
+          continue;
+        }
+        if (completed(track.id) != null) {
+          continue;
+        }
+        packCurrentTitle = track.title;
+        notifyListeners();
+        final url = await resolveUrl(track.id);
+        if (url == null) {
+          _items[track.id] = DownloadRecord(
+            trackId: track.id,
+            path: '',
+            title: track.title,
+            state: DownloadState.failed,
+            error: 'No permitted download URL',
+            artistName: track.artistName,
+            artworkUrl: track.artworkUrl,
+            durationMs: track.durationMs,
+            license: track.spdxId,
+          );
+          await _persist();
+          notifyListeners();
+          continue;
+        }
+        try {
+          await enqueue(
+            trackId: track.id,
+            title: track.title,
+            url: url,
+            permitted: true,
+            license: track.spdxId,
+            artistName: track.artistName,
+            artworkUrl: track.artworkUrl,
+            durationMs: track.durationMs,
+          );
+        } on DownloadRejected {
+          // Recorded as failed inside enqueue.
+        }
+      }
+    } finally {
+      packRunning = !packPaused && packCompletedCount < packTrackIds.length;
+      packCurrentTitle = null;
+      notifyListeners();
+    }
+  }
+
   Future<void> remove(String trackId) async {
     _cancels[trackId]?.cancel('removed');
     final item = _items.remove(trackId);

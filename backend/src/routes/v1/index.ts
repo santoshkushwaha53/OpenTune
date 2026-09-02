@@ -14,11 +14,15 @@ import { reportRoutes } from "./reports.js";
 import { searchRoutes } from "./search.js";
 import { tracksRoutes } from "./tracks.js";
 import { usersRoutes } from "./users.js";
+import { onboardingRoutes } from "./onboarding.js";
+import { recommendationRoutes } from "./recommendations.js";
 
 export async function v1Routes(app: FastifyInstance): Promise<void> {
   await app.register(v1HealthRoutes);
   await app.register(authRoutes);
   await app.register(usersRoutes);
+  await app.register(onboardingRoutes);
+  await app.register(recommendationRoutes);
   await app.register(searchRoutes);
   await app.register(tracksRoutes);
   await app.register(artistsRoutes);

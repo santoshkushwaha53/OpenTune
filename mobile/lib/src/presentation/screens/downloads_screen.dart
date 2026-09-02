@@ -28,6 +28,28 @@ class DownloadsScreen extends ConsumerWidget {
       appBar: AppBar(title: const Text('Downloads')),
       body: ListView(
         children: [
+          if (store.packTrackIds.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(8),
+              child: OverflowBar(
+                children: [
+                  TextButton(
+                    onPressed: store.pausePack,
+                    child: const Text('Pause all'),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/home');
+                      }
+                    },
+                    child: const Text('Continue in background'),
+                  ),
+                ],
+              ),
+            ),
           for (final item in items)
             ListTile(
               title: Text(item.title),

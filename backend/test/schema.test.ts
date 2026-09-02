@@ -43,6 +43,8 @@ describe("prisma schema", () => {
       '@@map("playlists")',
       '@@map("playlist_tracks")',
       '@@map("playlist_shares")',
+      '@@map("user_preferences")',
+      '@@map("user_favorite_artists")',
     ]) {
       expect(schema).toContain(table);
     }

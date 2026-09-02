@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../data/session_store.dart';
 import 'screens/artist_album_screens.dart';
 import 'screens/catalog_sources_screen.dart';
 import 'screens/discover_screen.dart';
@@ -7,6 +8,7 @@ import 'screens/downloads_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/library_screen.dart';
 import 'screens/login_screen.dart';
+import 'screens/onboarding_screen.dart';
 import 'screens/player_screen.dart';
 import 'screens/playlist_screens.dart';
 import 'screens/track_screen.dart';
@@ -14,6 +16,22 @@ import 'shell.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/home',
+  refreshListenable: onboardingGate,
+  redirect: (context, state) {
+    final path = state.uri.path;
+    final onboarding = path.startsWith('/onboarding');
+    if (onboardingGate.loggedIn &&
+        !onboardingGate.onboardingCompleted &&
+        !onboarding) {
+      return '/onboarding';
+    }
+    if (onboardingGate.loggedIn &&
+        onboardingGate.onboardingCompleted &&
+        onboarding) {
+      return '/home';
+    }
+    return null;
+  },
   routes: [
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
@@ -47,6 +65,14 @@ final appRouter = GoRouter(
     ),
     GoRoute(path: '/player', builder: (context, state) => const PlayerScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
+    GoRoute(
+      path: '/settings/music-preferences',
+      builder: (context, state) => const OnboardingScreen(settingsMode: true),
+    ),
     GoRoute(
       path: '/downloads',
       builder: (context, state) => const DownloadsScreen(),

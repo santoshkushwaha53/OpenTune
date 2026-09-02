@@ -39,9 +39,29 @@ Response `200`: `{ "status": "ok" }`
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/api/v1/users/me` | current profile |
+| GET | `/api/v1/users/me` | current profile + `onboardingCompleted` |
 | PATCH | `/api/v1/users/me` | update profile |
 | GET | `/api/v1/users/:id` | public profile |
+| GET | `/api/v1/users/me/preferences` | listening taste (no audio URLs) |
+| PUT | `/api/v1/users/me/preferences` | replace artists, categories, languages, moods |
+
+## Onboarding — `/api/v1/onboarding`
+
+Catalogs are editorial ranking signals plus **open-licensed** artists from enabled providers. Commercial artist names are not implied as available.
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| GET | `/api/v1/onboarding/artists` | `?q=` optional search; metadata only |
+| GET | `/api/v1/onboarding/categories` | `?more=true` includes extra scenes |
+| GET | `/api/v1/onboarding/languages` | ranking signals, not hard filters unless `languageMode=only` |
+| GET | `/api/v1/onboarding/moods` | optional vibes |
+| POST | `/api/v1/onboarding/complete` | `{ skip?: boolean }` |
+
+## Recommendations — `/api/v1/recommendations`
+
+| Method | Path | Notes |
+| --- | --- | --- |
+| POST | `/api/v1/recommendations/starter-pack` | auth; up to 10 tracks with a live permitted **download** URL. Metadata only — client resolves `/downloads/:id/source` and fetches the provider. |
 
 ## Search — `/api/v1/search` (Phase 7)
 
@@ -129,7 +149,7 @@ Status and catalog **metadata** only. Sync never stores playback or download URL
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/api/v1/discovery/home` | ranked shelves (`recommended` / `trending` / `newOpenReleases`); optional Bearer for recents + For you |
+| GET | `/api/v1/discovery/home` | ranked shelves; Bearer adds recents, For you, and preference-based collections (no audio URLs) |
 | GET | `/api/v1/discovery/trending` | play-count ranking |
 | GET | `/api/v1/discovery/genres` | |
 

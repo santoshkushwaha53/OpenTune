@@ -71,11 +71,17 @@ export async function registerUser(input: {
         username,
         passwordHash: await hashPassword(input.password),
         displayName: input.displayName.trim(),
+        preference: {
+          create: {
+            onboardingCompleted: false,
+            onboardingVersion: 0,
+          },
+        },
       },
       select: meUserSelect,
     });
     const tokens = await issueTokens(user.id, input.meta);
-    return { user, tokens };
+    return { user: await withOnboarding(user), tokens };
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -104,7 +110,7 @@ export async function loginUser(input: {
     where: { id: user.id },
     select: meUserSelect,
   });
-  return { user: safe, tokens };
+  return { user: await withOnboarding(safe), tokens };
 }
 
 export async function refreshSession(input: {
@@ -149,24 +155,39 @@ export async function getMe(userId: string) {
   if (!user) {
     throw new AppError(401, ErrorCodes.UNAUTHORIZED, "Account not found");
   }
-  return user;
+  return withOnboarding(user);
+}
+
+async function withOnboarding<T extends { id: string }>(user: T) {
+  const prefs = await prisma.userPreference.findUnique({
+    where: { userId: user.id },
+    select: { onboardingCompleted: true, onboardingVersion: true },
+  });
+  return {
+    ...user,
+    // Existing accounts without a row already used Home — do not force onboarding.
+    onboardingCompleted: prefs?.onboardingCompleted ?? true,
+    onboardingVersion: prefs?.onboardingVersion ?? 0,
+  };
 }
 
 export async function updateMe(
   userId: string,
   patch: { displayName?: string; bio?: string | null; avatarUrl?: string | null },
 ) {
-  return prisma.user.update({
-    where: { id: userId },
-    data: {
-      ...(patch.displayName !== undefined
-        ? { displayName: patch.displayName.trim() }
-        : {}),
-      ...(patch.bio !== undefined ? { bio: patch.bio } : {}),
-      ...(patch.avatarUrl !== undefined ? { avatarUrl: patch.avatarUrl } : {}),
-    },
-    select: meUserSelect,
-  });
+  return withOnboarding(
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(patch.displayName !== undefined
+          ? { displayName: patch.displayName.trim() }
+          : {}),
+        ...(patch.bio !== undefined ? { bio: patch.bio } : {}),
+        ...(patch.avatarUrl !== undefined ? { avatarUrl: patch.avatarUrl } : {}),
+      },
+      select: meUserSelect,
+    }),
+  );
 }
 
 export async function getPublicUser(id: string) {

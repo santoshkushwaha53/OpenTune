@@ -2,6 +2,13 @@
 
 All notable changes to OpenTune are documented here.
 
+## Unreleased
+
+- Personalized onboarding after registration: artists, scenes, languages, and vibes stored as metadata in PostgreSQL
+- Starter-pack ranking returns at most 10 **download-eligible** tracks; streaming-only rows are never auto-downloaded
+- Flutter downloads the starter pack from provider URLs in the background and lands on Home immediately
+- Home is artwork-first (greeting, hero, horizontal shelves) instead of offline-status copy
+
 ## 0.1.0 — 2026-09-02
 
 Initial open-source release of the metadata mediator:

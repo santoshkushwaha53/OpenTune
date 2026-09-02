@@ -56,6 +56,16 @@ class LibraryScreen extends ConsumerWidget {
               message: 'Offline mode — playing files already on this device.',
             ),
           ListTile(
+            leading: const Icon(Icons.tune),
+            title: const Text('Music preferences'),
+            subtitle: const Text(
+              'Artists, scenes, languages, and vibes. Existing downloads stay on this device.',
+            ),
+            onTap: () => session.loggedIn
+                ? context.push('/settings/music-preferences')
+                : context.push('/login'),
+          ),
+          ListTile(
             leading: const Icon(Icons.cloud_outlined),
             title: const Text('Catalog sources'),
             subtitle: const Text(

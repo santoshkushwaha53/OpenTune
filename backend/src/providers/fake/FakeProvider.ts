@@ -19,34 +19,149 @@ const CC_BY: ProviderLicense = {
   allowsDownload: true,
 };
 
-const TRACKS: ProviderTrack[] = [
-  {
-    externalId: "fake-1",
-    title: "Open Horizon",
-    durationMs: 180_000,
-    artistName: "Northwind",
-    artistExternalId: "fake-artist-1",
-    albumTitle: "Public Skies",
-    albumExternalId: "fake-album-1",
-    artworkUrl: "https://example.invalid/art/open-horizon.jpg",
-    license: CC_BY,
-    attributionText: '"Open Horizon" by Northwind. CC BY 4.0.',
-    capabilities: { supportsStreaming: true, supportsDownload: true },
-  },
-  {
-    externalId: "fake-2",
-    title: "Harbor Lights",
-    durationMs: 210_000,
-    artistName: "Northwind",
-    artistExternalId: "fake-artist-1",
-    albumTitle: "Public Skies",
-    albumExternalId: "fake-album-1",
-    artworkUrl: "https://example.invalid/art/harbor-lights.jpg",
-    license: CC_BY,
-    attributionText: '"Harbor Lights" by Northwind. CC BY 4.0.',
-    capabilities: { supportsStreaming: true, supportsDownload: false },
-  },
+type FakeTrack = ProviderTrack & { tags: string[] };
+
+const TRACKS: FakeTrack[] = [
+  makeTrack(
+    "fake-1",
+    "Open Horizon",
+    "Northwind",
+    "fake-artist-1",
+    "Public Skies",
+    true,
+    ["ambient", "acoustic"],
+  ),
+  makeTrack(
+    "fake-2",
+    "Harbor Lights",
+    "Northwind",
+    "fake-artist-1",
+    "Public Skies",
+    false,
+    ["ambient"],
+  ),
+  makeTrack(
+    "fake-3",
+    "Morning Light",
+    "Cedar Room",
+    "fake-artist-2",
+    "Daybreak",
+    true,
+    ["acoustic", "morning", "indie"],
+  ),
+  makeTrack("fake-4", "Sunset Drive", "Lumen Park", "fake-artist-3", "Highways", true, [
+    "electronic",
+    "driving",
+    "travel",
+  ]),
+  makeTrack("fake-5", "Quiet Study", "Kite Lantern", "fake-artist-4", "Pages", true, [
+    "lofi",
+    "study",
+    "focus",
+  ]),
+  makeTrack("fake-6", "River Atlas", "Glass Haven", "fake-artist-5", "Maps", true, [
+    "folk",
+    "world",
+    "acoustic",
+  ]),
+  makeTrack(
+    "fake-7",
+    "Temple Bells",
+    "Saffron Line",
+    "fake-artist-6",
+    "Dusk Raga",
+    true,
+    ["indian pop", "hindi", "devotional"],
+  ),
+  makeTrack(
+    "fake-8",
+    "Neon Courtyard",
+    "Indigo Current",
+    "fake-artist-7",
+    "After Hours",
+    true,
+    ["electronic", "party", "night"],
+  ),
+  makeTrack("fake-9", "Paper Kite", "Willow Circuit", "fake-artist-8", "Drafts", true, [
+    "indie",
+    "relax",
+    "english vocal",
+  ]),
+  makeTrack("fake-10", "Coastal Jazz", "Blue Veranda", "fake-artist-9", "Porch", true, [
+    "jazz",
+    "relax",
+    "instrumental",
+  ]),
+  makeTrack("fake-11", "Steel Pulse", "Iron Orchard", "fake-artist-10", "Forge", true, [
+    "rock",
+    "workout",
+  ]),
+  makeTrack(
+    "fake-12",
+    "Midnight Echo",
+    "Soft Antenna",
+    "fake-artist-11",
+    "Signals",
+    true,
+    ["ambient", "meditation", "night"],
+  ),
+  makeTrack(
+    "fake-13",
+    "Canvas Folk",
+    "Meadow Static",
+    "fake-artist-12",
+    "Fields",
+    true,
+    ["folk", "acoustic", "english vocal"],
+  ),
 ];
+
+function makeTrack(
+  externalId: string,
+  title: string,
+  artistName: string,
+  artistExternalId: string,
+  albumTitle: string,
+  download: boolean,
+  tags: string[],
+): ProviderTrack & { tags: string[] } {
+  const n = Number(externalId.replace("fake-", ""));
+  const durationMs =
+    externalId === "fake-1"
+      ? 180_000
+      : externalId === "fake-2"
+        ? 210_000
+        : 180_000 + n * 5_000;
+  return {
+    externalId,
+    title,
+    durationMs,
+    artistName,
+    artistExternalId,
+    albumTitle,
+    albumExternalId: `fake-album-${artistExternalId}`,
+    artworkUrl: `https://example.invalid/art/${externalId}.jpg`,
+    license: CC_BY,
+    attributionText: `"${title}" by ${artistName}. CC BY 4.0.`,
+    capabilities: { supportsStreaming: true, supportsDownload: download },
+    tags,
+  };
+}
+
+function matchesQuery(track: (typeof TRACKS)[number], q: string): boolean {
+  if (!q || q === "*") {
+    return true;
+  }
+  const haystack = [
+    track.title,
+    track.artistName,
+    track.albumTitle ?? "",
+    ...track.tags,
+  ]
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q) || track.tags.some((tag) => tag === q);
+}
 
 const ALBUM: ProviderAlbum = {
   externalId: "fake-album-1",
@@ -56,15 +171,9 @@ const ALBUM: ProviderAlbum = {
   trackExternalIds: ["fake-1", "fake-2"],
 };
 
-const ARTIST: ProviderArtist = {
-  externalId: "fake-artist-1",
-  name: "Northwind",
-  artworkUrl: "https://example.invalid/art/northwind.jpg",
-};
-
 /**
  * In-memory catalog for tests. Not registered outside NODE_ENV=test.
- * Includes one downloadable track and one stream-only track.
+ * Includes downloadable tracks plus one stream-only Harbor Lights row.
  */
 export class FakeProvider implements MusicProvider {
   readonly id: string = "fake";
@@ -82,13 +191,7 @@ export class FakeProvider implements MusicProvider {
     options?: { limit?: number },
   ): Promise<ProviderSearchResult[]> {
     const q = query.trim().toLowerCase();
-    const matches = TRACKS.filter(
-      (track) =>
-        track.title.toLowerCase().includes(q) ||
-        track.artistName.toLowerCase().includes(q) ||
-        q === "*" ||
-        q.length === 0,
-    );
+    const matches = TRACKS.filter((track) => matchesQuery(track, q));
     return matches.slice(0, options?.limit ?? 20);
   }
 
@@ -101,7 +204,15 @@ export class FakeProvider implements MusicProvider {
   }
 
   async getArtist(externalId: string): Promise<ProviderArtist | null> {
-    return ARTIST.externalId === externalId ? ARTIST : null;
+    const track = TRACKS.find((item) => item.artistExternalId === externalId);
+    if (!track) {
+      return null;
+    }
+    return {
+      externalId: track.artistExternalId,
+      name: track.artistName,
+      artworkUrl: track.artworkUrl,
+    };
   }
 
   async getPlaybackSource(externalId: string): Promise<ProviderMediaSource | null> {

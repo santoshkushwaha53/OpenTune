@@ -6,6 +6,12 @@ import '../domain/track.dart';
 import 'catalog_cache.dart';
 import 'offline_store.dart';
 
+/// Override at build time: `--dart-define=API_BASE_URL=https://opentune-api.onrender.com`
+const kApiBaseUrl = String.fromEnvironment(
+  'API_BASE_URL',
+  defaultValue: 'http://127.0.0.1:3000',
+);
+
 final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(offline: ref.read(offlineStoreProvider));
 });
@@ -13,7 +19,7 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 class ApiClient {
   ApiClient({
     Dio? dio,
-    this.baseUrl = 'http://127.0.0.1:3000',
+    this.baseUrl = kApiBaseUrl,
     FlutterSecureStorage? storage,
     CatalogCache? cache,
     OfflineStore? offline,
@@ -22,8 +28,8 @@ class ApiClient {
            Dio(
              BaseOptions(
                baseUrl: baseUrl,
-               connectTimeout: const Duration(seconds: 2),
-               receiveTimeout: const Duration(seconds: 8),
+               connectTimeout: const Duration(seconds: 30),
+               receiveTimeout: const Duration(seconds: 30),
              ),
            ),
        _storage = storage ?? const FlutterSecureStorage(),
@@ -406,6 +412,95 @@ class ApiClient {
     final response = await _dio.post<Map<String, dynamic>>(
       '/api/v1/reports',
       data: {'entityType': entityType, 'entityId': entityId, 'reason': reason},
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> me() async {
+    await _attachAuth();
+    final response = await _dio.get<Map<String, dynamic>>('/api/v1/users/me');
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> preferences() async {
+    await _attachAuth();
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/users/me/preferences',
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> savePreferences(
+    Map<String, dynamic> body,
+  ) async {
+    await _attachAuth();
+    final response = await _dio.put<Map<String, dynamic>>(
+      '/api/v1/users/me/preferences',
+      data: body,
+    );
+    return response.data ?? {};
+  }
+
+  Future<Map<String, dynamic>> completeOnboarding({bool skip = false}) async {
+    await _attachAuth();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/onboarding/complete',
+      data: {'skip': skip},
+    );
+    return response.data ?? {};
+  }
+
+  Future<List<Map<String, dynamic>>> onboardingArtists({String? query}) async {
+    await _attachAuth();
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/onboarding/artists',
+      queryParameters: {
+        if (query != null && query.trim().isNotEmpty) 'q': query,
+      },
+    );
+    return [
+      for (final row in response.data?['artists'] as List<dynamic>? ?? [])
+        if (row is Map<String, dynamic>) row,
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> onboardingCategories({
+    bool more = false,
+  }) async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/onboarding/categories',
+      queryParameters: {if (more) 'more': 'true'},
+    );
+    return [
+      for (final row in response.data?['categories'] as List<dynamic>? ?? [])
+        if (row is Map<String, dynamic>) row,
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> onboardingLanguages() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/onboarding/languages',
+    );
+    return [
+      for (final row in response.data?['languages'] as List<dynamic>? ?? [])
+        if (row is Map<String, dynamic>) row,
+    ];
+  }
+
+  Future<List<Map<String, dynamic>>> onboardingMoods() async {
+    final response = await _dio.get<Map<String, dynamic>>(
+      '/api/v1/onboarding/moods',
+    );
+    return [
+      for (final row in response.data?['moods'] as List<dynamic>? ?? [])
+        if (row is Map<String, dynamic>) row,
+    ];
+  }
+
+  Future<Map<String, dynamic>> starterPack() async {
+    await _attachAuth();
+    final response = await _dio.post<Map<String, dynamic>>(
+      '/api/v1/recommendations/starter-pack',
     );
     return response.data ?? {};
   }
