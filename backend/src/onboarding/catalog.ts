@@ -130,3 +130,66 @@ export function publicLanguages() {
 export function publicMoods() {
   return ONBOARDING_MOODS.map(({ slug, name }) => ({ slug, name }));
 }
+
+export function publicDiscoverScenes() {
+  const bySlug = (slugs: string[]) =>
+    ONBOARDING_CATEGORIES.filter((item) => slugs.includes(item.slug)).map(
+      ({ slug, name, searchQuery }) => ({ slug, name, searchQuery }),
+    );
+  return {
+    groups: [
+      {
+        id: "indian",
+        title: "Indian scenes",
+        scenes: bySlug([
+          "bollywood",
+          "indian-pop",
+          "devotional",
+          "folk",
+          "soundtracks",
+        ]),
+      },
+      {
+        id: "global",
+        title: "Global sounds",
+        scenes: bySlug([
+          "indie",
+          "electronic",
+          "lofi",
+          "rock",
+          "hip-hop",
+          "jazz",
+          "rnb",
+          "classical",
+          "ambient",
+          "acoustic",
+          "instrumental",
+          "world",
+          "blues",
+          "funk",
+          "metal",
+          "reggae",
+          "piano",
+        ]),
+      },
+      {
+        id: "voices",
+        title: "Languages & voices",
+        scenes: ONBOARDING_LANGUAGES.map((item) => ({
+          slug: `lang-${item.code}`,
+          name: item.name,
+          searchQuery: item.searchQuery,
+        })),
+      },
+      {
+        id: "moods",
+        title: "Moods",
+        scenes: ONBOARDING_MOODS.map(({ slug, name, searchQuery }) => ({
+          slug,
+          name,
+          searchQuery,
+        })),
+      },
+    ],
+  };
+}

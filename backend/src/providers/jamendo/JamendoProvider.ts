@@ -5,6 +5,7 @@ import type {
   ProviderHealth,
   ProviderLicense,
   ProviderMediaSource,
+  ProviderSearchOptions,
   ProviderSearchResult,
   ProviderTrack,
 } from "../core/types.js";
@@ -20,6 +21,7 @@ export type JamendoTrackPayload = {
   album_id?: string;
   image?: string;
   album_image?: string;
+  releasedate?: string;
   audio?: string;
   audiodownload?: string;
   audiodownload_allowed?: boolean;
@@ -54,15 +56,22 @@ export class JamendoProvider implements MusicProvider {
 
   async search(
     query: string,
-    options?: { limit?: number },
+    options?: ProviderSearchOptions,
   ): Promise<ProviderSearchResult[]> {
     const limit = Math.min(Math.max(options?.limit ?? 20, 1), 50);
-    const data = await this.request("tracks", {
-      search: query,
+    const params: Record<string, string> = {
       limit: String(limit),
       include: "licenses",
       audioformat: "mp32",
-    });
+    };
+    if (query.trim()) {
+      params.search = query.trim();
+    }
+    const between = jamendoDateBetween(options?.yearFrom, options?.yearTo);
+    if (between) {
+      params.datebetween = between;
+    }
+    const data = await this.request("tracks", params);
     return (data.results ?? [])
       .map((row) => this.mapTrack(row))
       .filter((track): track is ProviderTrack => track !== null);
@@ -151,6 +160,7 @@ export class JamendoProvider implements MusicProvider {
     const artwork = [row.image, row.album_image].find(
       (url) => url && isAllowedJamendoUrl(url),
     );
+    const releasedYear = parseReleasedYear(row.releasedate);
     return {
       externalId: String(row.id),
       title: row.name,
@@ -160,6 +170,7 @@ export class JamendoProvider implements MusicProvider {
       albumTitle: row.album_name,
       albumExternalId: row.album_id ? String(row.album_id) : undefined,
       artworkUrl: artwork,
+      releasedYear,
       license,
       attributionText: `"${row.name}" by ${row.artist_name}. ${license.spdxId}. Source: Jamendo.`,
       capabilities: {
@@ -194,4 +205,21 @@ export class JamendoProvider implements MusicProvider {
     }
     return (await response.json()) as { results?: JamendoTrackPayload[] };
   }
+}
+
+function jamendoDateBetween(yearFrom?: number, yearTo?: number) {
+  if (yearFrom == null && yearTo == null) {
+    return undefined;
+  }
+  const start = yearFrom ?? yearTo!;
+  const end = yearTo ?? yearFrom!;
+  return `${start}-01-01_${end}-12-31`;
+}
+
+function parseReleasedYear(value?: string) {
+  if (!value) {
+    return undefined;
+  }
+  const year = Number(value.slice(0, 4));
+  return Number.isInteger(year) && year >= 1950 && year <= 2030 ? year : undefined;
 }

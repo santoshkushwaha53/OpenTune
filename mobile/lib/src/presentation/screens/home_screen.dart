@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../application/player_controller.dart';
 import '../../application/providers.dart';
 import '../../data/download_store.dart';
+import '../../data/taste_store.dart';
 import '../../domain/track.dart';
 import '../theme/tokens.dart';
 import '../widgets/cover_art.dart';
@@ -77,27 +78,44 @@ class HomeScreen extends ConsumerWidget {
         final categoryShelves = _asMaps(data['categoryShelves']);
         final favoriteArtists = _asMaps(data['favoriteArtists']);
         final saved = ref.watch(downloadStoreProvider).libraryTracks();
+        final taste = ref.watch(tasteStoreProvider);
+        final nowPlaying = ref.watch(playerControllerProvider).current;
+        final searchHits = taste.lastTracks;
         final genres = _asMaps(data['genres'])
             .map((row) => row['name'] as String? ?? '')
             .where((name) => name.isNotEmpty)
             .toList();
         final playlists = _asMaps(data['communityPlaylists']);
-        final hero = firstCollection.isNotEmpty
-            ? firstCollection.first
-            : recommended.isNotEmpty
-            ? recommended.first
-            : trending.isNotEmpty
-            ? trending.first
-            : saved.isNotEmpty
-            ? saved.first
-            : null;
+        final hero =
+            nowPlaying ??
+            (recents.isNotEmpty
+                ? recents.first
+                : searchHits.isNotEmpty
+                ? searchHits.first
+                : firstCollection.isNotEmpty
+                ? firstCollection.first
+                : recommended.isNotEmpty
+                ? recommended.first
+                : trending.isNotEmpty
+                ? trending.first
+                : saved.isNotEmpty
+                ? saved.first
+                : null);
         final empty =
             hero == null &&
             recommended.isEmpty &&
             trending.isEmpty &&
             recents.isEmpty &&
             saved.isEmpty &&
+            searchHits.isEmpty &&
             firstCollection.isEmpty;
+        final heroSubtitle = nowPlaying != null
+            ? 'Now playing'
+            : recents.isNotEmpty
+            ? 'Pick up where you left off'
+            : taste.lastQuery != null && searchHits.isNotEmpty
+            ? 'From “${taste.lastQuery}”'
+            : data['subtitle'] as String? ?? "Here's something you'll love.";
         final seen = <String>{if (hero != null) hero.id};
         List<TrackSummary> unique(List<TrackSummary> tracks) {
           final out = <TrackSummary>[];
@@ -117,10 +135,7 @@ class HomeScreen extends ConsumerWidget {
               SliverToBoxAdapter(
                 child: _Header(
                   greeting: data['greeting'] as String? ?? 'OpenTune',
-                  subtitle: empty
-                      ? ''
-                      : data['subtitle'] as String? ??
-                            "Here's something you'll love.",
+                  subtitle: empty ? '' : heroSubtitle,
                 ),
               ),
               const SliverToBoxAdapter(child: StarterPackBanner()),
@@ -167,6 +182,13 @@ class HomeScreen extends ConsumerWidget {
                     tracks: unique(firstCollection),
                   ),
                 _rail(title: 'Continue', tracks: unique(recents)),
+                if (searchHits.isNotEmpty)
+                  _rail(
+                    title: taste.lastQuery == null
+                        ? 'From your search'
+                        : 'Because you searched ${taste.lastQuery}',
+                    tracks: searchHits,
+                  ),
                 _rail(title: 'For you', tracks: recommended),
                 for (final row in becauseYouLike)
                   _rail(

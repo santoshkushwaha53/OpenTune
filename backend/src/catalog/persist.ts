@@ -2,6 +2,13 @@ import { prisma } from "../db/prisma.js";
 import type { ProviderTrack } from "../providers/core/types.js";
 import { canonicalKey, slugify } from "./canonical.js";
 
+function releaseDateFromYear(year?: number) {
+  if (!year || year < 1900 || year > 2100) {
+    return undefined;
+  }
+  return new Date(Date.UTC(year, 0, 1));
+}
+
 export async function persistProviderTrack(providerSlug: string, track: ProviderTrack) {
   const provider = await prisma.provider.findUnique({ where: { slug: providerSlug } });
   if (!provider) {
@@ -40,11 +47,18 @@ export async function persistProviderTrack(providerSlug: string, track: Provider
     });
     if (existingAlbum) {
       albumId = existingAlbum.id;
+      if (!existingAlbum.releaseDate && track.releasedYear) {
+        await prisma.album.update({
+          where: { id: existingAlbum.id },
+          data: { releaseDate: releaseDateFromYear(track.releasedYear) },
+        });
+      }
     } else {
       const album = await prisma.album.create({
         data: {
           title: track.albumTitle,
           artworkUrl: track.artworkUrl,
+          releaseDate: releaseDateFromYear(track.releasedYear),
           albumArtists: {
             create: { artistId: artist.id, role: "primary", position: 0 },
           },

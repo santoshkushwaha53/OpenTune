@@ -88,6 +88,18 @@ describe("jamendo connector", () => {
     await expect(provider.search("tomorrow")).rejects.toThrow(/client id/i);
   });
 
+  it("sends datebetween for year filters without fetching audio", async () => {
+    let seen = "";
+    const fetchImpl: typeof fetch = async (input, init) => {
+      seen = String(input);
+      return fixtureFetch()(input, init);
+    };
+    const provider = new JamendoProvider("test-client", fetchImpl);
+    await provider.search("piano", { yearFrom: 2018, yearTo: 2018 });
+    expect(seen).toContain("datebetween=2018-01-01_2018-12-31");
+    expect(seen).not.toContain("audiodownload_allowed");
+  });
+
   it("maps open Creative Commons licenses and rejects the rest", () => {
     expect(
       licenseFromJamendoUrl("http://creativecommons.org/licenses/by/4.0/")?.spdxId,

@@ -29,9 +29,16 @@ export type ProviderTrack = {
   albumTitle?: string;
   albumExternalId?: string;
   artworkUrl?: string;
+  releasedYear?: number;
   license: ProviderLicense;
   attributionText: string;
   capabilities: TrackMediaCapabilities;
+};
+
+export type ProviderSearchOptions = {
+  limit?: number;
+  yearFrom?: number;
+  yearTo?: number;
 };
 
 export type ProviderSearchResult = ProviderTrack;
@@ -77,7 +84,10 @@ export interface MusicProvider {
   readonly id: string;
   readonly name: string;
   readonly capabilities: ProviderCapabilities;
-  search(query: string, options?: { limit?: number }): Promise<ProviderSearchResult[]>;
+  search(
+    query: string,
+    options?: ProviderSearchOptions,
+  ): Promise<ProviderSearchResult[]>;
   getTrack(externalId: string): Promise<ProviderTrack | null>;
   getAlbum?(externalId: string): Promise<ProviderAlbum | null>;
   getArtist?(externalId: string): Promise<ProviderArtist | null>;

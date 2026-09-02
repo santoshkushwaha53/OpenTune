@@ -4,10 +4,16 @@ import { providerRegistry } from "../providers/core/registry.js";
 import { persistProviderTrack } from "./persist.js";
 import { orderByRank, rankTrackIds } from "./ranking.js";
 
-export async function searchCatalog(query: string, limit = 20) {
+export async function searchCatalog(
+  query: string,
+  options?: { limit?: number; yearFrom?: number; yearTo?: number },
+) {
   const q = query.trim();
-  if (q.length < 1) {
-    throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "q is required");
+  const yearFrom = options?.yearFrom;
+  const yearTo = options?.yearTo;
+  const limit = options?.limit ?? 20;
+  if (q.length < 1 && yearFrom == null && yearTo == null) {
+    throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "q or year is required");
   }
 
   const enabled = await prisma.provider.findMany({ where: { isEnabled: true } });
@@ -19,7 +25,7 @@ export async function searchCatalog(query: string, limit = 20) {
     if (!provider) {
       continue;
     }
-    const hits = await provider.search(q, { limit });
+    const hits = await provider.search(q, { limit, yearFrom, yearTo });
     for (const hit of hits) {
       const persisted = await persistProviderTrack(row.slug, hit);
       if (seen.has(persisted.track.id)) {
@@ -59,6 +65,7 @@ export async function serializeTrack(trackId: string) {
     title: track.title,
     durationMs: track.durationMs,
     artworkUrl: track.artworkUrl,
+    year: track.album?.releaseDate ? track.album.releaseDate.getUTCFullYear() : null,
     album: track.album ? { id: track.album.id, title: track.album.title } : null,
     artist: primary ? { id: primary.id, name: primary.name } : null,
     license: source

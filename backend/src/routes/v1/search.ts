@@ -4,10 +4,18 @@ import { z } from "zod";
 import { searchCatalog } from "../../catalog/search.js";
 import { parseWith } from "../../http/validate.js";
 
-const querySchema = z.object({
-  q: z.string().min(1).max(200),
-  limit: z.coerce.number().int().min(1).max(50).optional(),
-});
+const querySchema = z
+  .object({
+    q: z.string().max(200).optional(),
+    year: z.coerce.number().int().min(1950).max(2030).optional(),
+    yearFrom: z.coerce.number().int().min(1950).max(2030).optional(),
+    yearTo: z.coerce.number().int().min(1950).max(2030).optional(),
+    limit: z.coerce.number().int().min(1).max(50).optional(),
+  })
+  .refine(
+    (value) => Boolean(value.q?.trim()) || value.year != null || value.yearFrom != null,
+    { message: "q or year is required" },
+  );
 
 export async function searchRoutes(app: FastifyInstance): Promise<void> {
   app.get(
@@ -18,9 +26,11 @@ export async function searchRoutes(app: FastifyInstance): Promise<void> {
         summary: "Aggregated catalog search",
         querystring: {
           type: "object",
-          required: ["q"],
           properties: {
             q: { type: "string" },
+            year: { type: "integer" },
+            yearFrom: { type: "integer" },
+            yearTo: { type: "integer" },
             limit: { type: "integer" },
           },
         },
@@ -28,7 +38,13 @@ export async function searchRoutes(app: FastifyInstance): Promise<void> {
     },
     async (request) => {
       const query = parseWith(querySchema, request.query, "query");
-      const results = await searchCatalog(query.q, query.limit);
+      const yearFrom = query.year ?? query.yearFrom;
+      const yearTo = query.year ?? query.yearTo;
+      const results = await searchCatalog(query.q ?? "", {
+        limit: query.limit,
+        yearFrom,
+        yearTo,
+      });
       return { results };
     },
   );

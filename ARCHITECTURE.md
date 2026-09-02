@@ -88,7 +88,7 @@ Planned packages (now in `mobile/`):
 | Playback | just_audio + audio_session (queue, shuffle, repeat, seek; iOS `audio` background mode). Lock-screen / notification controls via `audio_service` are deferred so widget tests stay headless. |
 | Downloads | Dio to app-documents from the **provider download URL** (cancel, checksum, license snapshot). `background_downloader` is deferred so widget tests stay headless. |
 
-Primary navigation: Home, Discover, Library. A persistent mini-player sits above the bottom navigation while audio is playing. Home is artwork-first (daypart greeting, hero, horizontal shelves). Discover, track detail, and Library rows keep availability visible:
+Primary navigation: Home, Discover, Library. A persistent mini-player sits above the bottom navigation while audio is playing. Home is artwork-first (now playing, listen history, last search, then shelves). Discover is a visual open-catalog scene browser with song, singer, and year search. Track detail and Library rows keep availability visible:
 
 | State | Meaning |
 | --- | --- |

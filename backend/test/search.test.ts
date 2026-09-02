@@ -156,5 +156,24 @@ describe("search and discovery", () => {
     const by = await app.inject({ method: "GET", url: "/api/v1/licenses/CC-BY-4.0" });
     expect(by.statusCode).toBe(200);
     expect(by.json().spdxId).toBe("CC-BY-4.0");
+
+    const byYear = await app.inject({
+      method: "GET",
+      url: "/api/v1/search?year=2018",
+    });
+    expect(byYear.statusCode).toBe(200);
+    const yearHits = byYear.json().results as Array<{ title: string; year?: number }>;
+    expect(yearHits.some((track) => track.title === "Open Horizon")).toBe(true);
+    expect(yearHits.every((track) => track.year === 2018 || track.year == null)).toBe(
+      true,
+    );
+
+    const scenes = await app.inject({
+      method: "GET",
+      url: "/api/v1/discovery/scenes",
+    });
+    expect(scenes.statusCode).toBe(200);
+    expect(JSON.stringify(scenes.json())).toMatch(/Bollywood/);
+    expect(JSON.stringify(scenes.json())).not.toMatch(/\/stream\//);
   });
 });

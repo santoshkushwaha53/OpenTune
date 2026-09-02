@@ -4,9 +4,11 @@ class TrackSummary {
     required this.title,
     required this.durationMs,
     this.artworkUrl,
+    this.artistId,
     this.artistName,
     this.albumTitle,
     this.spdxId,
+    this.year,
     this.stream = true,
     this.download = false,
     this.attributionRequired = true,
@@ -16,9 +18,11 @@ class TrackSummary {
   final String title;
   final int durationMs;
   final String? artworkUrl;
+  final String? artistId;
   final String? artistName;
   final String? albumTitle;
   final String? spdxId;
+  final int? year;
   final bool stream;
   final bool download;
   final bool attributionRequired;
@@ -33,9 +37,11 @@ class TrackSummary {
       title: json['title'] as String? ?? 'Unknown',
       durationMs: json['durationMs'] as int? ?? 0,
       artworkUrl: json['artworkUrl'] as String?,
+      artistId: artist?['id'] as String?,
       artistName: artist?['name'] as String?,
       albumTitle: album?['title'] as String?,
       spdxId: license?['spdxId'] as String?,
+      year: json['year'] as int?,
       stream: availability?['stream'] as bool? ?? true,
       download: availability?['download'] as bool? ?? false,
       attributionRequired:
@@ -48,7 +54,8 @@ class TrackSummary {
     'title': title,
     'durationMs': durationMs,
     'artworkUrl': artworkUrl,
-    'artist': {'name': artistName},
+    'year': year,
+    'artist': {'id': artistId, 'name': artistName},
     'album': {'title': albumTitle},
     'license': {'spdxId': spdxId},
     'availability': {

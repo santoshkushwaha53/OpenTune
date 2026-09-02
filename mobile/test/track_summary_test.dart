@@ -18,5 +18,15 @@ void main() {
     expect(track.title, 'Open Horizon');
     expect(track.artistName, 'Northwind');
     expect(track.download, isTrue);
+    expect(
+      TrackSummary.fromJson({
+        'id': '11111111-1111-1111-1111-111111111111',
+        'title': 'Open Horizon',
+        'durationMs': 180000,
+        'year': 2018,
+        'artist': {'id': 'a', 'name': 'Northwind'},
+      }).year,
+      2018,
+    );
   });
 }

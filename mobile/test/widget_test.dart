@@ -96,7 +96,11 @@ class _CatalogApiClient extends _EmptyApiClient {
   }
 
   @override
-  Future<List<TrackSummary>> search(String query) async {
+  Future<List<TrackSummary>> search(
+    String query, {
+    int? yearFrom,
+    int? yearTo,
+  }) async {
     if (query.toLowerCase().contains('harbor')) {
       return [_harbor];
     }

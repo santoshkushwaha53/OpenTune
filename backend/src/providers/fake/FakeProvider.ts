@@ -6,6 +6,7 @@ import type {
   ProviderHealth,
   ProviderLicense,
   ProviderMediaSource,
+  ProviderSearchOptions,
   ProviderSearchResult,
   ProviderTrack,
 } from "../core/types.js";
@@ -141,6 +142,7 @@ function makeTrack(
     albumTitle,
     albumExternalId: `fake-album-${artistExternalId}`,
     artworkUrl: `https://example.invalid/art/${externalId}.jpg`,
+    releasedYear: 2017 + n,
     license: CC_BY,
     attributionText: `"${title}" by ${artistName}. CC BY 4.0.`,
     capabilities: { supportsStreaming: true, supportsDownload: download },
@@ -156,6 +158,7 @@ function matchesQuery(track: (typeof TRACKS)[number], q: string): boolean {
     track.title,
     track.artistName,
     track.albumTitle ?? "",
+    String(track.releasedYear ?? ""),
     ...track.tags,
   ]
     .join(" ")
@@ -188,10 +191,22 @@ export class FakeProvider implements MusicProvider {
 
   async search(
     query: string,
-    options?: { limit?: number },
+    options?: ProviderSearchOptions,
   ): Promise<ProviderSearchResult[]> {
     const q = query.trim().toLowerCase();
-    const matches = TRACKS.filter((track) => matchesQuery(track, q));
+    const matches = TRACKS.filter((track) => {
+      if (!matchesQuery(track, q)) {
+        return false;
+      }
+      const year = track.releasedYear;
+      if (options?.yearFrom != null && (year == null || year < options.yearFrom)) {
+        return false;
+      }
+      if (options?.yearTo != null && (year == null || year > options.yearTo)) {
+        return false;
+      }
+      return true;
+    });
     return matches.slice(0, options?.limit ?? 20);
   }
 
@@ -261,7 +276,7 @@ export class ControllableHealthFakeProvider extends FakeProvider {
 
   async search(
     _query: string,
-    _options?: { limit?: number },
+    _options?: ProviderSearchOptions,
   ): Promise<ProviderSearchResult[]> {
     return [];
   }

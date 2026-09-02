@@ -67,7 +67,7 @@ Catalogs are editorial ranking signals plus **open-licensed** artists from enabl
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/api/v1/search` | `?q=` aggregated across enabled providers, deduped by `canonical_key`, ranked. Metadata only — no playback URLs. |
+| GET | `/api/v1/search` | `?q=` and/or `year` / `yearFrom` / `yearTo`; aggregated across enabled providers, deduped, ranked. Metadata only — no playback URLs. |
 
 ## Tracks — `/api/v1/tracks`
 
@@ -151,7 +151,8 @@ Status and catalog **metadata** only. Sync never stores playback or download URL
 | --- | --- | --- |
 | GET | `/api/v1/discovery/home` | ranked shelves; Bearer adds recents, For you, and preference-based collections (no audio URLs) |
 | GET | `/api/v1/discovery/trending` | play-count ranking |
-| GET | `/api/v1/discovery/genres` | |
+| GET | `/api/v1/discovery/genres` | catalog genre names |
+| GET | `/api/v1/discovery/scenes` | editorial open-catalog scenes for Discover (no commercial-catalog claims) |
 
 ## Reports — `/api/v1/reports`
 

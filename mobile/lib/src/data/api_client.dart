@@ -128,9 +128,13 @@ class ApiClient {
     return data;
   }
 
-  Future<List<TrackSummary>> search(String query) async {
+  Future<List<TrackSummary>> search(
+    String query, {
+    int? yearFrom,
+    int? yearTo,
+  }) async {
     final q = query.trim();
-    if (q.isEmpty) {
+    if (q.isEmpty && yearFrom == null && yearTo == null) {
       return [];
     }
     if (_offline?.offline == true) {
@@ -139,7 +143,11 @@ class ApiClient {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '/api/v1/search',
-        queryParameters: {'q': q},
+        queryParameters: {
+          if (q.isNotEmpty) 'q': q,
+          if (yearFrom != null) 'yearFrom': yearFrom,
+          if (yearTo != null) 'yearTo': yearTo,
+        },
       );
       _offline?.enterOnline();
       return TrackSummary.listFrom(response.data?['results']);
