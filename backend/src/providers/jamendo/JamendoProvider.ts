@@ -10,6 +10,7 @@ import type {
   ProviderTrack,
 } from "../core/types.js";
 import { isAllowedJamendoUrl, licenseFromJamendoUrl } from "./licenses.js";
+import { jamendoFuzzyTags } from "./tags.js";
 
 export type JamendoTrackPayload = {
   id?: string;
@@ -64,17 +65,51 @@ export class JamendoProvider implements MusicProvider {
       include: "licenses",
       audioformat: "mp32",
     };
-    if (query.trim()) {
-      params.search = query.trim();
-    }
     const between = jamendoDateBetween(options?.yearFrom, options?.yearTo);
     if (between) {
       params.datebetween = between;
     }
-    const data = await this.request("tracks", params);
-    return (data.results ?? [])
+
+    const q = query.trim();
+    const rows: JamendoTrackPayload[] = [];
+    const seen = new Set<string>();
+    const ingest = (batch?: JamendoTrackPayload[]) => {
+      for (const row of batch ?? []) {
+        const id = row.id;
+        if (!id || seen.has(id)) {
+          continue;
+        }
+        seen.add(id);
+        rows.push(row);
+        if (rows.length >= limit) {
+          return;
+        }
+      }
+    };
+
+    if (q) {
+      ingest((await this.request("tracks", { ...params, search: q })).results);
+    } else {
+      ingest((await this.request("tracks", params)).results);
+    }
+
+    const tags = jamendoFuzzyTags(q, rows.length);
+    if (rows.length < limit && tags.length > 0) {
+      ingest(
+        (
+          await this.request("tracks", {
+            ...params,
+            fuzzytags: tags.join(" "),
+            boost: "popularity_month",
+          })
+        ).results,
+      );
+    }
+
+    return rows
       .map((row) => this.mapTrack(row))
-      .filter((track): track is ProviderTrack => track !== null);
+      .filter((track): track is ProviderTrack => track !== null)
+      .slice(0, limit);
   }
 
   async getTrack(externalId: string): Promise<ProviderTrack | null> {

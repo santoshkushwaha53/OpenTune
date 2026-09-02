@@ -10,6 +10,7 @@ All notable changes to OpenTune are documented here.
 - Home is artwork-first (greeting, hero, horizontal shelves) instead of offline-status copy
 - Discover browse uses visual scene tiles; search can target songs, singers, and years
 - Discover scene results show a song count plus Play and Download actions (no source URLs)
+- Discover scene search falls back to Jamendo tags when a name search is empty (open catalog, not commercial film songs)
 - Home hero follows now playing, listen history, and the last Discover search
 
 ## 0.1.0 — 2026-09-02

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { JamendoProvider } from "../src/providers/jamendo/JamendoProvider.js";
 import { licenseFromJamendoUrl } from "../src/providers/jamendo/licenses.js";
+import { jamendoFuzzyTags } from "../src/providers/jamendo/tags.js";
 
 type FixtureTrack = {
   id: string;
@@ -89,15 +90,53 @@ describe("jamendo connector", () => {
   });
 
   it("sends datebetween for year filters without fetching audio", async () => {
-    let seen = "";
+    const seen: string[] = [];
     const fetchImpl: typeof fetch = async (input, init) => {
-      seen = String(input);
+      seen.push(String(input));
       return fixtureFetch()(input, init);
     };
     const provider = new JamendoProvider("test-client", fetchImpl);
     await provider.search("piano", { yearFrom: 2018, yearTo: 2018 });
-    expect(seen).toContain("datebetween=2018-01-01_2018-12-31");
-    expect(seen).not.toContain("audiodownload_allowed");
+    expect(seen.join(" ")).toContain("datebetween=2018-01-01_2018-12-31");
+    expect(seen.join(" ")).toContain("search=piano");
+    expect(seen.join(" ")).not.toContain("audiodownload_allowed");
+  });
+
+  it("falls back to fuzzytags for scene queries with no name matches", async () => {
+    const seen: string[] = [];
+    const fetchImpl: typeof fetch = async (input, init) => {
+      const url = new URL(String(input));
+      seen.push(url.search);
+      if (url.searchParams.get("search") === "bollywood") {
+        return new Response(JSON.stringify({ results: [] }), {
+          status: 200,
+          headers: { "content-type": "application/json" },
+        });
+      }
+      return fixtureFetch()(input, init);
+    };
+    const provider = new JamendoProvider("test-client", fetchImpl);
+    const results = await provider.search("bollywood");
+    expect(seen[0]).toContain("search=bollywood");
+    expect(seen[1]).toMatch(/fuzzytags=/);
+    expect(seen[1]).toMatch(/india/);
+    expect(seen.join(" ")).not.toMatch(/\/stream\//);
+    expect(results.map((track) => track.title)).toEqual([
+      "Make Tomorrow",
+      "Night Harbor",
+      "Off Host",
+    ]);
+  });
+
+  it("maps scene names to open-catalog Jamendo tags", () => {
+    expect(jamendoFuzzyTags("bollywood")).toEqual([
+      "india",
+      "indian",
+      "sitar",
+      "world",
+    ]);
+    expect(jamendoFuzzyTags("piano", 0)).toEqual(["piano"]);
+    expect(jamendoFuzzyTags("Open Horizon", 2)).toEqual([]);
   });
 
   it("maps open Creative Commons licenses and rejects the rest", () => {
