@@ -43,7 +43,10 @@ class _DiscoverApi extends ApiClient {
     if (yearFrom != null && yearFrom > 2018) {
       return [];
     }
-    if (query.toLowerCase().contains('bollywood') ||
+    if (query.toLowerCase() == 'bollywood') {
+      return [];
+    }
+    if (query.toLowerCase().contains('indian') ||
         query.toLowerCase().contains('horizon')) {
       return [_horizon];
     }

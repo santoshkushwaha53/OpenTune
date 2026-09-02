@@ -11,6 +11,7 @@ All notable changes to OpenTune are documented here.
 - Discover browse uses visual scene tiles; search can target songs, singers, and years
 - Discover scene results show a song count plus Play and Download actions (no source URLs)
 - Discover scene search falls back to Jamendo tags when a name search is empty (open catalog, not commercial film songs)
+- Discover retries empty scene chips with an open-catalog query (Bollywood → indian) so the list is not blank
 - Home hero follows now playing, listen history, and the last Discover search
 
 ## 0.1.0 — 2026-09-02

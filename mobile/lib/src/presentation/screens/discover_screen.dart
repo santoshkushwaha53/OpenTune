@@ -101,7 +101,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       }
     });
     try {
-      final List<TrackSummary> results;
+      var results = <TrackSummary>[];
       if (ref.read(offlineStoreProvider).offline) {
         results = ref.read(downloadStoreProvider).searchLibrary(q);
       } else {
@@ -112,6 +112,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               yearFrom: yearFromQuery.$1,
               yearTo: yearFromQuery.$2,
             );
+        final fallback = (scene ?? _scene)?.fallbackQuery;
+        if (results.isEmpty &&
+            fallback != null &&
+            fallback.isNotEmpty &&
+            fallback != q) {
+          results = await ref
+              .read(apiClientProvider)
+              .search(
+                fallback,
+                yearFrom: yearFromQuery.$1,
+                yearTo: yearFromQuery.$2,
+              );
+        }
       }
       if (!mounted) {
         return;

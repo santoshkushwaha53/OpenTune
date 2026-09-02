@@ -7,11 +7,13 @@ class MusicScene {
     required this.searchQuery,
     required this.colors,
     required this.icon,
+    this.fallbackQuery,
   });
 
   final String slug;
   final String name;
   final String searchQuery;
+  final String? fallbackQuery;
   final List<Color> colors;
   final IconData icon;
 }
@@ -60,6 +62,7 @@ final discoverSceneGroups = [
         'bollywood',
         Icons.movie_outlined,
         const [Color(0xFFE11D48), Color(0xFFF59E0B)],
+        fallbackQuery: 'indian',
       ),
       _scene('indian-pop', 'Indian Pop', 'indian pop', Icons.mic_none, const [
         Color(0xFF7C3AED),
@@ -71,17 +74,19 @@ final discoverSceneGroups = [
         'devotional',
         Icons.self_improvement,
         const [Color(0xFFB45309), Color(0xFFFDE68A)],
+        fallbackQuery: 'world',
       ),
       _scene('folk', 'Folk', 'folk', Icons.spa_outlined, const [
         Color(0xFF047857),
         Color(0xFF6EE7B7),
-      ]),
+      ], fallbackQuery: 'world'),
       _scene(
         'soundtracks',
         'Soundtracks',
         'soundtrack',
         Icons.theaters_outlined,
         const [Color(0xFF1D4ED8), Color(0xFF22D3EE)],
+        fallbackQuery: 'world',
       ),
     ],
   ),
@@ -99,7 +104,7 @@ final discoverSceneGroups = [
       _scene('lofi', 'Lo-fi', 'lofi', Icons.nights_stay_outlined, const [
         Color(0xFF312E81),
         Color(0xFF818CF8),
-      ]),
+      ], fallbackQuery: 'ambient'),
       _scene('rock', 'Rock', 'rock', Icons.offline_bolt_outlined, const [
         Color(0xFF9F1239),
         Color(0xFFF97316),
@@ -150,6 +155,7 @@ final discoverSceneGroups = [
         'hindi',
         Icons.record_voice_over_outlined,
         const [Color(0xFFC2410C), Color(0xFFFBBF24)],
+        fallbackQuery: 'indian',
       ),
       _scene(
         'lang-ta',
@@ -157,6 +163,7 @@ final discoverSceneGroups = [
         'tamil',
         Icons.record_voice_over_outlined,
         const [Color(0xFFB91C1C), Color(0xFFFB7185)],
+        fallbackQuery: 'indian',
       ),
       _scene(
         'lang-te',
@@ -164,6 +171,7 @@ final discoverSceneGroups = [
         'telugu',
         Icons.record_voice_over_outlined,
         const [Color(0xFF7C2D12), Color(0xFFFDBA74)],
+        fallbackQuery: 'indian',
       ),
       _scene(
         'lang-en',
@@ -225,12 +233,14 @@ MusicScene _scene(
   String name,
   String query,
   IconData icon,
-  List<Color> colors,
-) {
+  List<Color> colors, {
+  String? fallbackQuery,
+}) {
   return MusicScene(
     slug: slug,
     name: name,
     searchQuery: query,
+    fallbackQuery: fallbackQuery,
     colors: colors,
     icon: icon,
   );
