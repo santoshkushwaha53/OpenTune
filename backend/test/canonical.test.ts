@@ -28,6 +28,12 @@ describe("provider media URL sanitizer", () => {
         "https://prod-1.storage.jamendo.com/?trackid=1",
       ),
     ).toContain("jamendo.com");
+    expect(
+      sanitizeProviderMediaUrl(
+        "archive",
+        "https://archive.org/download/open-pulse/open-pulse.mp3",
+      ),
+    ).toContain("archive.org");
     expect(sanitizeProviderMediaUrl("fake", "https://evil.example/a.mp3")).toBeNull();
     expect(
       sanitizeProviderMediaUrl("jamendo", "http://api.jamendo.com/v3.0/tracks"),

@@ -11,6 +11,8 @@ const DEFAULT_ALLOWLIST = [
   "storage.jamendo.com",
   "api.audius.co",
   "audius.co",
+  "archive.org",
+  "us.archive.org",
 ];
 
 /**

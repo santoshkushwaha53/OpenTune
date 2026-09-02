@@ -1,3 +1,4 @@
+import { ARCHIVE_HOST_ALLOWLIST } from "../providers/archive/licenses.js";
 import { AUDIUS_HOST_ALLOWLIST } from "../providers/audius/licenses.js";
 import { JAMENDO_HOST_ALLOWLIST } from "../providers/jamendo/licenses.js";
 import { assertSafeProviderUrl } from "../security/url-allowlist.js";
@@ -12,6 +13,9 @@ export function hostAllowlistForProvider(slug: string): string[] {
   }
   if (slug === "audius") {
     return AUDIUS_HOST_ALLOWLIST;
+  }
+  if (slug === "archive") {
+    return ARCHIVE_HOST_ALLOWLIST;
   }
   return EXTRA_HOSTS[slug] ?? [];
 }

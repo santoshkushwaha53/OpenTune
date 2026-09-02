@@ -8,8 +8,12 @@ describe("provider URL allowlist", () => {
       "api.jamendo.com",
     );
     expect(
-      assertSafeProviderUrl("https://api.audius.co/v1/tracks/search").hostname,
-    ).toBe("api.audius.co");
+      assertSafeProviderUrl("https://archive.org/metadata/open-pulse").hostname,
+    ).toBe("archive.org");
+    expect(
+      assertSafeProviderUrl("https://ia601208.us.archive.org/5/items/open-pulse/a.mp3")
+        .hostname,
+    ).toBe("ia601208.us.archive.org");
     expect(() => assertSafeProviderUrl("http://api.jamendo.com/v3.0/tracks")).toThrow();
     expect(() => assertSafeProviderUrl("https://evil.example/audio.mp3")).toThrow();
     expect(() =>

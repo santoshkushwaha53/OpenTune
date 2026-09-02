@@ -1,5 +1,6 @@
 import type { Env } from "../config/env.js";
 import { prisma } from "../db/prisma.js";
+import { ArchiveProvider } from "../providers/archive/ArchiveProvider.js";
 import { AudiusProvider } from "../providers/audius/AudiusProvider.js";
 import { FakeProvider } from "../providers/fake/FakeProvider.js";
 import { FmaProvider } from "../providers/fma/FmaProvider.js";
@@ -22,12 +23,21 @@ const fmaCapabilities = {
   requiresAttribution: true,
 };
 
+function testOnlyArchiveFetch(): typeof fetch {
+  return async () => {
+    throw new Error("Internet Archive is not called in automated tests");
+  };
+}
+
 export async function bootstrapProviders(env: Env): Promise<void> {
   if (env.NODE_ENV === "test") {
     providerRegistry.register(new FakeProvider());
   }
   providerRegistry.register(new AudiusProvider(env.AUDIUS_API_KEY ?? ""));
   providerRegistry.register(new JamendoProvider(env.JAMENDO_CLIENT_ID ?? ""));
+  providerRegistry.register(
+    new ArchiveProvider(env.NODE_ENV === "test" ? testOnlyArchiveFetch() : fetch),
+  );
   providerRegistry.register(new FmaProvider());
 
   if (env.NODE_ENV === "test") {
@@ -79,19 +89,38 @@ export async function bootstrapProviders(env: Env): Promise<void> {
     },
   });
 
+  const archiveEnabled =
+    env.NODE_ENV !== "test" && env.INTERNET_ARCHIVE_ENABLED !== "false";
+  await prisma.provider.upsert({
+    where: { slug: "archive" },
+    create: {
+      slug: "archive",
+      name: "Internet Archive",
+      isEnabled: archiveEnabled,
+      priority: 3,
+      capabilities: openCatalogCapabilities,
+      baseUrl: "https://archive.org",
+    },
+    update: {
+      isEnabled: archiveEnabled,
+      priority: 3,
+      capabilities: openCatalogCapabilities,
+    },
+  });
+
   await prisma.provider.upsert({
     where: { slug: "fma" },
     create: {
       slug: "fma",
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 3,
+      priority: 4,
       capabilities: fmaCapabilities,
       baseUrl: "https://freemusicarchive.org",
     },
     update: {
       isEnabled: false,
-      priority: 3,
+      priority: 4,
       capabilities: fmaCapabilities,
     },
   });

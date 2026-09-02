@@ -2,7 +2,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { PrismaClient } from "../src/generated/prisma/index.js";
 import { seedCatalog } from "../prisma/seed-catalog.js";
-import { JAMENDO_PROVIDER_SLUG, SEED_LICENSES } from "../prisma/seed-data.js";
+import {
+  ARCHIVE_PROVIDER_SLUG,
+  JAMENDO_PROVIDER_SLUG,
+  SEED_LICENSES,
+} from "../prisma/seed-data.js";
 
 const prisma = new PrismaClient();
 const requireDb = process.env.CI === "true" || process.env.REQUIRE_DB === "true";
@@ -46,6 +50,14 @@ describe("database seed", () => {
     expect(jamendo).not.toBeNull();
     expect(jamendo?.isEnabled).toBe(false);
     expect(jamendo?.baseUrl).toBe("https://api.jamendo.com/v3.0");
+
+    const archive = await prisma.provider.findUnique({
+      where: { slug: ARCHIVE_PROVIDER_SLUG },
+    });
+    expect(archive).not.toBeNull();
+    expect(archive?.isEnabled).toBe(false);
+    expect(archive?.priority).toBe(3);
+    expect(archive?.baseUrl).toBe("https://archive.org");
   });
 
   it("does not re-enable jamendo on reseed", async () => {

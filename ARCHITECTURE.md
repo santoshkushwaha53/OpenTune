@@ -32,6 +32,7 @@ flowchart LR
   resolver[SourceResolver]
   jamendo[JamendoAPI]
   audius[AudiusAPI]
+  archive[InternetArchiveAPI]
   fma[FMADisabled]
   other[FutureProviders]
   device[DeviceStorage]
@@ -42,10 +43,12 @@ flowchart LR
   api --> resolver
   resolver --> audius
   resolver --> jamendo
+  resolver --> archive
   resolver --> fma
   resolver --> other
   audius -->|stream or download URL| flutter
   jamendo -->|stream or download URL| flutter
+  archive -->|stream or download URL| flutter
   flutter --> device
 ```
 
@@ -109,7 +112,8 @@ backend/src/providers/
   core/                 MusicProvider, capabilities, DTOs, errors
   audius/               official Audius API (priority 1)
   jamendo/              official Jamendo API (priority 2)
-  fma/                  disabled FMA slot (priority 3)
+  archive/              official Internet Archive JSON APIs (priority 3, CC/PD only)
+  fma/                  disabled FMA slot (priority 4)
 ```
 
 Conceptual interface:
@@ -137,7 +141,7 @@ type ProviderCapabilities = {
 
 The source resolver never invents a download from a stream-only capability set.
 
-First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). **Audius** is priority 1 when `AUDIUS_API_KEY` is set (downloadable CC tracks only). **FMA** is a disabled priority-3 slot because its public API was retired and scraping/hotlinking are not allowed. Additional providers are additive plugins.
+First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). **Audius** is priority 1 when `AUDIUS_API_KEY` is set (downloadable CC tracks only). **Internet Archive** is priority 3 for audio items that already declare CC BY/BY-SA or public-domain/CC0 licenses. **FMA** is a disabled priority-4 slot because its public API was retired and scraping/hotlinking are not allowed. Additional providers are additive plugins.
 
 ## Source resolver (Phase 7)
 
@@ -151,7 +155,7 @@ Sohum discovery search walks enabled connectors in priority order:
 Search (Hindi / English / …)
         │
         ▼
-  Source router: Audius → Jamendo → FMA
+  Source router: Audius → Jamendo → Internet Archive → FMA
         │
         ▼
   Rights filter: downloadAllowed?

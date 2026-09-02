@@ -26,3 +26,5 @@ services:
         sync: false
       - key: AUDIUS_API_KEY
         sync: false
+      - key: INTERNET_ARCHIVE_ENABLED
+        value: "true"

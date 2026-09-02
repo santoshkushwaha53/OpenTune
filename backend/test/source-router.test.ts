@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { AudiusProvider } from "../src/providers/audius/AudiusProvider.js";
 import { licenseFromAudius } from "../src/providers/audius/licenses.js";
+import { archiveSearchQueries } from "../src/providers/archive/queries.js";
 import { audiusSearchQueries } from "../src/providers/audius/queries.js";
 import { FmaProvider } from "../src/providers/fma/FmaProvider.js";
 import {
@@ -94,10 +95,11 @@ describe("fma connector", () => {
 });
 
 describe("sohum source router", () => {
-  it("orders Audius before Jamendo and FMA", () => {
+  it("orders Audius before Jamendo, Internet Archive, and FMA", () => {
     expect(SOURCE_ROUTER_PRIORITY.audius).toBe(1);
     expect(SOURCE_ROUTER_PRIORITY.jamendo).toBe(2);
-    expect(SOURCE_ROUTER_PRIORITY.fma).toBe(3);
+    expect(SOURCE_ROUTER_PRIORITY.archive).toBe(3);
+    expect(SOURCE_ROUTER_PRIORITY.fma).toBe(4);
   });
 
   it("prefers downloadable hits and skips listen-only to the next source", () => {
@@ -153,6 +155,15 @@ describe("sohum source router", () => {
       "tabla",
     ]);
     expect(audiusSearchQueries("piano")).toEqual(["piano"]);
+    expect(archiveSearchQueries("bollywood")).toEqual([
+      "bollywood",
+      "hindi",
+      "indian",
+      "bhangra",
+      "sitar",
+      "raga",
+    ]);
+    expect(archiveSearchQueries("piano")).toEqual(["piano"]);
   });
 
   it("maps Audius license strings", () => {

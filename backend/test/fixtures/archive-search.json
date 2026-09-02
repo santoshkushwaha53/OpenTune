@@ -1,0 +1,21 @@
+{
+  "response": {
+    "numFound": 2,
+    "docs": [
+      {
+        "identifier": "open-pulse",
+        "title": "Open Pulse",
+        "creator": "Open Desk",
+        "year": "2019",
+        "licenseurl": "https://creativecommons.org/licenses/by/4.0/"
+      },
+      {
+        "identifier": "closed-cut",
+        "title": "Closed Cut",
+        "creator": "Locked",
+        "year": "2020",
+        "licenseurl": "https://creativecommons.org/licenses/by-nc/4.0/"
+      }
+    ]
+  }
+}

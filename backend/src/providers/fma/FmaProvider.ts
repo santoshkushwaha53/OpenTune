@@ -21,7 +21,7 @@ const RETIRED =
   "Free Music Archive retired its public API. OpenTune does not scrape FMA or hotlink FMA audio.";
 
 /**
- * Priority-3 slot in the Sohum source router.
+ * Priority-4 slot in the Sohum source router.
  * FMA forbids scraping and hotlinking; this connector stays disabled.
  */
 export class FmaProvider implements MusicProvider {

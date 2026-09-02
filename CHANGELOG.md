@@ -14,7 +14,8 @@ All notable changes to OpenTune are documented here.
 - Discover retries empty scene chips with an open-catalog query (Bollywood → indian) so the list is not blank
 - Indian scene chips fill from per-tag Jamendo/Audius queries (sitar, raga, bhangra, …) and say they are licensed open-catalog tracks, not film soundtracks
 - Discover singer search seeds open-catalog artists (Jamendo/Audius) so the Singers tab can find names that have licensed tracks
-- Sohum source router: Audius (1) → Jamendo (2) → FMA (3, disabled). Search prefers download-allowed tracks; stream-only is never turned into a download. FMA has no official API so it is not queried.
+- Internet Archive official search/metadata connector (CC BY / BY-SA / CC0 / public-domain audio only). Search still cannot return commercial film catalogs.
+- Sohum source router: Audius (1) → Jamendo (2) → Internet Archive (3, CC/public-domain audio) → FMA (4, disabled). Search prefers download-allowed tracks; stream-only is never turned into a download. FMA has no official API so it is not queried.
 - Home hero follows now playing, listen history, and the last Discover search
 
 ## 0.1.0 — 2026-09-02

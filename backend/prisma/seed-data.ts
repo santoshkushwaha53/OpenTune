@@ -40,6 +40,7 @@ export const SEED_LICENSES: readonly SeedLicense[] = [
 
 export const JAMENDO_PROVIDER_SLUG = "jamendo";
 export const AUDIUS_PROVIDER_SLUG = "audius";
+export const ARCHIVE_PROVIDER_SLUG = "archive";
 export const FMA_PROVIDER_SLUG = "fma";
 
 export const JAMENDO_CAPABILITIES = {

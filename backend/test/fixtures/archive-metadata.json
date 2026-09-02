@@ -1,0 +1,39 @@
+{
+  "open-pulse": {
+    "metadata": {
+      "identifier": "open-pulse",
+      "title": "Open Pulse",
+      "creator": "Open Desk",
+      "year": "2019",
+      "licenseurl": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "files": [
+      {
+        "name": "cover.jpg",
+        "format": "Item Tile"
+      },
+      {
+        "name": "open-pulse.mp3",
+        "format": "VBR MP3",
+        "length": "180.0",
+        "size": "4320000"
+      }
+    ]
+  },
+  "closed-cut": {
+    "metadata": {
+      "identifier": "closed-cut",
+      "title": "Closed Cut",
+      "creator": "Locked",
+      "year": "2020",
+      "licenseurl": "https://creativecommons.org/licenses/by-nc/4.0/"
+    },
+    "files": [
+      {
+        "name": "closed.mp3",
+        "format": "VBR MP3",
+        "length": "90.0"
+      }
+    ]
+  }
+}

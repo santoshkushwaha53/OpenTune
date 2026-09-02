@@ -1,11 +1,12 @@
 import type { ProviderTrack } from "../providers/core/types.js";
 
-/** Sohum discovery engine: Audius → Jamendo → FMA. Fake is tests-only. */
+/** Sohum discovery engine: Audius → Jamendo → Internet Archive → FMA. Fake is tests-only. */
 export const SOURCE_ROUTER_PRIORITY: Record<string, number> = {
   fake: 0,
   audius: 1,
   jamendo: 2,
-  fma: 3,
+  archive: 3,
+  fma: 4,
 };
 
 export function downloadAllowed(

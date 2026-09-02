@@ -1,6 +1,7 @@
 import { HealthStatus, type PrismaClient } from "../src/generated/prisma/index.js";
 
 import {
+  ARCHIVE_PROVIDER_SLUG,
   AUDIUS_PROVIDER_SLUG,
   FMA_CAPABILITIES,
   FMA_PROVIDER_SLUG,
@@ -64,12 +65,31 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
   });
 
   await client.provider.upsert({
+    where: { slug: ARCHIVE_PROVIDER_SLUG },
+    create: {
+      slug: ARCHIVE_PROVIDER_SLUG,
+      name: "Internet Archive",
+      isEnabled: false,
+      priority: 3,
+      capabilities: JAMENDO_CAPABILITIES,
+      baseUrl: "https://archive.org",
+      healthStatus: HealthStatus.unknown,
+    },
+    update: {
+      name: "Internet Archive",
+      priority: 3,
+      capabilities: JAMENDO_CAPABILITIES,
+      baseUrl: "https://archive.org",
+    },
+  });
+
+  await client.provider.upsert({
     where: { slug: FMA_PROVIDER_SLUG },
     create: {
       slug: FMA_PROVIDER_SLUG,
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 3,
+      priority: 4,
       capabilities: FMA_CAPABILITIES,
       baseUrl: "https://freemusicarchive.org",
       healthStatus: HealthStatus.unknown,
@@ -77,7 +97,7 @@ export async function seedCatalog(client: PrismaClient): Promise<void> {
     update: {
       name: "Free Music Archive",
       isEnabled: false,
-      priority: 3,
+      priority: 4,
       capabilities: FMA_CAPABILITIES,
       baseUrl: "https://freemusicarchive.org",
     },

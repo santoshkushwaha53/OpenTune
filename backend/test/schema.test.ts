@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
+  ARCHIVE_PROVIDER_SLUG,
   JAMENDO_CAPABILITIES,
   JAMENDO_PROVIDER_SLUG,
   SEED_LICENSES,
@@ -80,5 +81,9 @@ describe("seed data", () => {
     expect(JAMENDO_CAPABILITIES.supportsRedistribution).toBe(false);
     expect(JAMENDO_CAPABILITIES.supportsStreaming).toBe(true);
     expect(JAMENDO_CAPABILITIES.supportsDownload).toBe(true);
+  });
+
+  it("registers Internet Archive as an open-catalog provider slug", () => {
+    expect(ARCHIVE_PROVIDER_SLUG).toBe("archive");
   });
 });

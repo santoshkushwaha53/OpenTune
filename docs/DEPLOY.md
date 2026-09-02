@@ -28,7 +28,7 @@ Set `DATABASE_URL` to the Neon `opentune` connection string (`sslmode=require`).
 
 1. Copy [`.env.production.example`](../.env.production.example) to `.env` on the host.
 2. Set `POSTGRES_PASSWORD` (`openssl rand -hex 24`), `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` (`openssl rand -hex 32` twice). Use hex so the database URL does not need encoding. Secrets must differ and must not match documented placeholders.
-3. Optional: `AUDIUS_API_KEY`, `JAMENDO_CLIENT_ID`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
+3. Optional: `AUDIUS_API_KEY`, `JAMENDO_CLIENT_ID`, `INTERNET_ARCHIVE_ENABLED`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
 4. Start the stack:
 
    ```bash
@@ -54,7 +54,7 @@ curl -X POST "$API_BASE/api/v1/providers/jamendo/sync" \
   -d '{"query":"*"}'
 ```
 
-Repeat for `audius` if that provider is enabled. This stores artist/track metadata from official APIs. It does not import commercial film catalogs.
+Repeat for `audius` and `archive` if those providers are enabled. This stores artist/track metadata from official APIs. It does not import commercial film catalogs.
 
 ## What not to deploy
 
