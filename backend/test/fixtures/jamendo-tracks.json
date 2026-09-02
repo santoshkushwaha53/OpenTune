@@ -1,0 +1,61 @@
+{
+  "headers": { "status": "success", "results_count": 4 },
+  "results": [
+    {
+      "id": "1123596",
+      "name": "Make Tomorrow",
+      "duration": 214,
+      "artist_id": "358454",
+      "artist_name": "Open Ensemble",
+      "album_name": "Public Works",
+      "album_id": "145000",
+      "image": "https://usercontent.jamendo.com/albums/v1/145000/covers/1.300.jpg",
+      "audio": "https://prod-1.storage.jamendo.com/?trackid=1123596&format=mp32",
+      "audiodownload": "https://prod-1.storage.jamendo.com/download/track/1123596/mp32/",
+      "audiodownload_allowed": true,
+      "license_ccurl": "http://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "1123597",
+      "name": "Night Harbor",
+      "duration": 180,
+      "artist_id": "358454",
+      "artist_name": "Open Ensemble",
+      "album_name": "Public Works",
+      "album_id": "145000",
+      "image": "https://usercontent.jamendo.com/albums/v1/145000/covers/1.300.jpg",
+      "audio": "https://prod-1.storage.jamendo.com/?trackid=1123597&format=mp32",
+      "audiodownload": "https://prod-1.storage.jamendo.com/download/track/1123597/mp32/",
+      "audiodownload_allowed": false,
+      "license_ccurl": "http://creativecommons.org/licenses/by/4.0/"
+    },
+    {
+      "id": "1123598",
+      "name": "Restricted Cut",
+      "duration": 200,
+      "artist_id": "358454",
+      "artist_name": "Open Ensemble",
+      "album_name": "Public Works",
+      "album_id": "145000",
+      "image": "https://usercontent.jamendo.com/albums/v1/145000/covers/1.300.jpg",
+      "audio": "https://prod-1.storage.jamendo.com/?trackid=1123598&format=mp32",
+      "audiodownload": "https://prod-1.storage.jamendo.com/download/track/1123598/mp32/",
+      "audiodownload_allowed": true,
+      "license_ccurl": "http://creativecommons.org/licenses/by-nc-nd/3.0/"
+    },
+    {
+      "id": "1123599",
+      "name": "Off Host",
+      "duration": 120,
+      "artist_id": "358454",
+      "artist_name": "Open Ensemble",
+      "album_name": "Public Works",
+      "album_id": "145000",
+      "image": "https://evil.example/cover.jpg",
+      "audio": "https://prod-1.storage.jamendo.com/?trackid=1123599&format=mp32",
+      "audiodownload": "https://evil.example/steal.mp3",
+      "audiodownload_allowed": true,
+      "license_ccurl": "http://creativecommons.org/licenses/by/4.0/"
+    }
+  ]
+}

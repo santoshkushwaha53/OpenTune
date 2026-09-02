@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: opentune-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: opentune
+      POSTGRES_PASSWORD: opentune
+      POSTGRES_DB: opentune
+    ports:
+      - "5432:5432"
+    volumes:
+      - opentune_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opentune -d opentune"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: opentune-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: info
+      DATABASE_URL: postgresql://opentune:opentune@postgres:5432/opentune?schema=public
+      JWT_ACCESS_SECRET: local-dev-access-secret-not-for-production
+      JWT_REFRESH_SECRET: local-dev-refresh-secret-not-for-production
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 14d
+      JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:-}
+    ports:
+      - "3000:3000"
+
+  # Redis is not required (in-process rate limiting).
+  # Enable later with: docker compose --profile redis up -d
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: opentune-redis
+  #   profiles: ["redis"]
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6379:6379"
+  #   command: ["redis-server", "--appendonly", "yes"]
+  #   volumes:
+  #     - opentune_redis_data:/var/lib/redis/data
+
+volumes:
+  opentune_pg_data:
+  # opentune_redis_data:

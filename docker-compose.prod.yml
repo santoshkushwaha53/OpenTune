@@ -1,0 +1,53 @@
+# Production stack: API + PostgreSQL metadata only.
+# Do not add MinIO, S3, or any audio/video volume. Providers host the audio.
+#
+#   cp .env.production.example .env
+#   docker compose -f docker-compose.prod.yml up --build -d
+#
+# Put a TLS terminator in front of the API. Do not publish PostgreSQL.
+
+name: opentune
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: opentune-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: opentune
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: opentune
+    volumes:
+      - opentune_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U opentune -d opentune"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./backend
+    container_name: opentune-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOST: 0.0.0.0
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      DATABASE_URL: postgresql://opentune:${POSTGRES_PASSWORD}@postgres:5432/opentune?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?set JWT_REFRESH_SECRET}
+      JWT_ACCESS_EXPIRES_IN: ${JWT_ACCESS_EXPIRES_IN:-15m}
+      JWT_REFRESH_EXPIRES_IN: ${JWT_REFRESH_EXPIRES_IN:-14d}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      JAMENDO_CLIENT_ID: ${JAMENDO_CLIENT_ID:-}
+      OPERATOR_TOKEN: ${OPERATOR_TOKEN:-}
+    ports:
+      - "${API_PORT:-3000}:3000"
+
+volumes:
+  opentune_pg_data:

@@ -1,0 +1,25 @@
+---
+description: OpenTune product invariants — no audio hosting, legal providers only, gated phases
+alwaysApply: true
+---
+
+# OpenTune invariants
+
+OpenTune is a metadata mediator. The Fastify API must never proxy, cache, store, transcode, or redistribute audio or video. The Flutter app streams or downloads audio only from the original provider URL.
+
+## Do not
+
+- Scrape copyrighted catalogs or bypass DRM
+- Invent a download from a streaming-only source
+- Accept arbitrary user URLs and fetch them from the backend (SSRF)
+- Commit secrets or audio/media files
+- Implement a later development phase until the user explicitly requests it
+- Move to the next phase while the current phase has known blocking errors
+
+## Do
+
+- Prefer official APIs or explicitly permitted endpoints
+- Require source + license (+ attribution when required) on every track
+- Keep provider connectors behind `MusicProvider` capabilities flags
+- Store metadata in PostgreSQL; store downloaded files only on the user device
+- After each phase: tests, lint/format, Flutter analyzer/tests, docs, then stop

@@ -1,0 +1,469 @@
+// OpenTune catalog is metadata only.
+// Do not add columns that store audio/video bytes, file paths, or long-lived
+// stream/download URLs. Resolve playback and download URLs at request time.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ArtistCreditRole {
+  primary
+  featured
+
+  @@map("artist_credit_role")
+}
+
+enum PlaylistVisibility {
+  private
+  unlisted
+  public
+
+  @@map("playlist_visibility")
+}
+
+enum PlayHistoryContext {
+  queue
+  playlist
+  album
+  search
+  other
+
+  @@map("play_history_context")
+}
+
+enum ReportEntityType {
+  track
+  playlist
+  user
+  artist
+  album
+  source
+
+  @@map("report_entity_type")
+}
+
+enum ReportStatus {
+  open
+  reviewed
+  dismissed
+
+  @@map("report_status")
+}
+
+enum JobStatus {
+  running
+  success
+  failed
+
+  @@map("job_status")
+}
+
+enum HealthStatus {
+  unknown
+  healthy
+  degraded
+  down
+
+  @@map("health_status")
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  email        String    @unique
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  displayName  String    @map("display_name")
+  avatarUrl    String?   @map("avatar_url")
+  bio          String?
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  sessions       UserSession[]
+  playlists      Playlist[]
+  favorites      Favorite[]
+  playHistory    PlayHistory[]
+  following      UserFollow[]     @relation("UserFollowing")
+  followers      UserFollow[]     @relation("UserFollowers")
+  artistFollows  ArtistFollow[]
+  reports        Report[]
+  playlistShares PlaylistShare[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @unique @map("refresh_token_hash")
+  expiresAt        DateTime @map("expires_at") @db.Timestamptz
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz
+  userAgent        String?  @map("user_agent")
+  ip               String?
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_sessions")
+}
+
+model License {
+  id                   String   @id @default(uuid()) @db.Uuid
+  spdxId               String   @unique @map("spdx_id")
+  name                 String
+  url                  String
+  allowsStreaming      Boolean  @map("allows_streaming")
+  allowsDownload       Boolean  @map("allows_download")
+  requiresAttribution   Boolean  @map("requires_attribution")
+  allowsRedistribution Boolean  @map("allows_redistribution")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  trackSources TrackSource[]
+  lyrics       Lyrics[]
+
+  @@map("licenses")
+}
+
+model Provider {
+  id                String       @id @default(uuid()) @db.Uuid
+  slug              String       @unique
+  name              String
+  isEnabled         Boolean      @default(false) @map("is_enabled")
+  /// ProviderCapabilities JSON: streaming, download, offline, redistribution, attribution.
+  capabilities      Json
+  baseUrl           String       @map("base_url")
+  healthStatus      HealthStatus @default(unknown) @map("health_status")
+  lastHealthCheckAt DateTime?    @map("last_health_check_at") @db.Timestamptz
+  createdAt         DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  trackSources TrackSource[]
+  syncLogs     ProviderSyncLog[]
+  healthChecks ProviderHealthCheck[]
+
+  @@index([isEnabled])
+  @@map("providers")
+}
+
+model Artist {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String
+  slug       String   @unique
+  bio        String?
+  artworkUrl String?  @map("artwork_url")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  trackArtists TrackArtist[]
+  albumArtists AlbumArtist[]
+  follows      ArtistFollow[]
+
+  @@map("artists")
+}
+
+model Album {
+  id          String    @id @default(uuid()) @db.Uuid
+  title       String
+  artworkUrl  String?   @map("artwork_url")
+  releaseDate DateTime? @map("release_date") @db.Date
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  tracks       Track[]
+  albumArtists AlbumArtist[]
+
+  @@map("albums")
+}
+
+model AlbumArtist {
+  albumId  String           @map("album_id") @db.Uuid
+  artistId String           @map("artist_id") @db.Uuid
+  role     ArtistCreditRole
+  position Int
+
+  album  Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Restrict)
+
+  @@id([albumId, artistId])
+  @@index([artistId])
+  @@map("album_artists")
+}
+
+/// Catalog track. canonical_key is a stable-ish dedup key, not a hard unique identity.
+model Track {
+  id           String    @id @default(uuid()) @db.Uuid
+  title        String
+  durationMs   Int       @map("duration_ms")
+  albumId      String?   @map("album_id") @db.Uuid
+  artworkUrl   String?   @map("artwork_url")
+  isrc         String?
+  canonicalKey String    @map("canonical_key")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz
+
+  album          Album?           @relation(fields: [albumId], references: [id], onDelete: SetNull)
+  trackArtists   TrackArtist[]
+  trackGenres    TrackGenre[]
+  trackSources   TrackSource[]
+  playlistTracks PlaylistTrack[]
+  favorites      Favorite[]
+  playHistory    PlayHistory[]
+  lyrics         Lyrics[]
+
+  @@index([canonicalKey])
+  @@index([albumId])
+  @@index([deletedAt, createdAt(sort: Desc)])
+  @@map("tracks")
+}
+
+model TrackArtist {
+  trackId  String           @map("track_id") @db.Uuid
+  artistId String           @map("artist_id") @db.Uuid
+  role     ArtistCreditRole
+  position Int
+
+  track  Track  @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Restrict)
+
+  @@id([trackId, artistId])
+  @@index([artistId])
+  @@map("track_artists")
+}
+
+model Genre {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  trackGenres TrackGenre[]
+
+  @@map("genres")
+}
+
+model TrackGenre {
+  trackId String @map("track_id") @db.Uuid
+  genreId String @map("genre_id") @db.Uuid
+
+  track Track @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  genre Genre @relation(fields: [genreId], references: [id], onDelete: Restrict)
+
+  @@id([trackId, genreId])
+  @@index([genreId])
+  @@map("track_genres")
+}
+
+/// Provenance for a track at a provider. Persist ids + license + capability flags.
+/// Do not persist long-lived audio URLs.
+model TrackSource {
+  id                 String    @id @default(uuid()) @db.Uuid
+  trackId            String    @map("track_id") @db.Uuid
+  providerId         String    @map("provider_id") @db.Uuid
+  externalTrackId    String    @map("external_track_id")
+  licenseId          String    @map("license_id") @db.Uuid
+  attributionText    String    @map("attribution_text")
+  supportsStreaming  Boolean   @map("supports_streaming")
+  supportsDownload   Boolean   @map("supports_download")
+  checksum           String?
+  /// Informational expiry for provider-issued URLs. The URL itself is not stored.
+  urlExpiresAt       DateTime? @map("url_expires_at") @db.Timestamptz
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  track      Track      @relation(fields: [trackId], references: [id], onDelete: Restrict)
+  provider   Provider    @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  license    License     @relation(fields: [licenseId], references: [id], onDelete: Restrict)
+  playHistory PlayHistory[]
+
+  @@unique([providerId, externalTrackId])
+  @@index([trackId])
+  @@index([licenseId])
+  @@map("track_sources")
+}
+
+model Playlist {
+  id                String             @id @default(uuid()) @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  title             String
+  description       String?
+  visibility        PlaylistVisibility @default(private)
+  forkOfPlaylistId  String?            @map("fork_of_playlist_id") @db.Uuid
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt         DateTime?         @map("deleted_at") @db.Timestamptz
+
+  owner    User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  forkOf   Playlist?       @relation("PlaylistForks", fields: [forkOfPlaylistId], references: [id], onDelete: SetNull)
+  forks    Playlist[]      @relation("PlaylistForks")
+  tracks   PlaylistTrack[]
+  shares   PlaylistShare[]
+
+  @@index([userId])
+  @@index([forkOfPlaylistId])
+  @@index([visibility, deletedAt])
+  @@map("playlists")
+}
+
+model PlaylistTrack {
+  playlistId String   @map("playlist_id") @db.Uuid
+  trackId    String   @map("track_id") @db.Uuid
+  position   Int
+  addedAt    DateTime @default(now()) @map("added_at") @db.Timestamptz
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  track    Track    @relation(fields: [trackId], references: [id], onDelete: Restrict)
+
+  @@id([playlistId, trackId])
+  @@index([playlistId, position])
+  @@index([trackId])
+  @@map("playlist_tracks")
+}
+
+model PlaylistShare {
+  id              String    @id @default(uuid()) @db.Uuid
+  playlistId      String    @map("playlist_id") @db.Uuid
+  createdByUserId String    @map("created_by_user_id") @db.Uuid
+  tokenHash       String    @unique @map("token_hash")
+  expiresAt       DateTime? @map("expires_at") @db.Timestamptz
+  revokedAt       DateTime? @map("revoked_at") @db.Timestamptz
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  playlist  Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  createdBy User     @relation(fields: [createdByUserId], references: [id], onDelete: Restrict)
+
+  @@index([playlistId])
+  @@map("playlist_shares")
+}
+
+model Favorite {
+  userId    String   @map("user_id") @db.Uuid
+  trackId   String   @map("track_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track Track @relation(fields: [trackId], references: [id], onDelete: Restrict)
+
+  @@id([userId, trackId])
+  @@index([trackId])
+  @@map("favorites")
+}
+
+model UserFollow {
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  follower User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("UserFollowers", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followeeId])
+  @@map("user_follows")
+}
+
+model ArtistFollow {
+  userId    String   @map("user_id") @db.Uuid
+  artistId  String   @map("artist_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  artist Artist @relation(fields: [artistId], references: [id], onDelete: Cascade)
+
+  @@id([userId, artistId])
+  @@index([artistId])
+  @@map("artist_follows")
+}
+
+model PlayHistory {
+  id                String              @id @default(uuid()) @db.Uuid
+  userId            String              @map("user_id") @db.Uuid
+  trackId           String              @map("track_id") @db.Uuid
+  trackSourceId     String?             @map("track_source_id") @db.Uuid
+  playedAt          DateTime            @default(now()) @map("played_at") @db.Timestamptz
+  durationPlayedMs  Int                @map("duration_played_ms")
+  context           PlayHistoryContext?
+  contextId         String?             @map("context_id") @db.Uuid
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  track       Track        @relation(fields: [trackId], references: [id], onDelete: Restrict)
+  trackSource TrackSource? @relation(fields: [trackSourceId], references: [id], onDelete: SetNull)
+
+  @@index([userId, playedAt(sort: Desc)])
+  @@index([trackId])
+  @@map("play_history")
+}
+
+model Lyrics {
+  id        String   @id @default(uuid()) @db.Uuid
+  trackId   String   @map("track_id") @db.Uuid
+  licenseId String   @map("license_id") @db.Uuid
+  text      String
+  isSynced  Boolean  @map("is_synced")
+  source    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  track   Track   @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  license License @relation(fields: [licenseId], references: [id], onDelete: Restrict)
+
+  @@unique([trackId, source])
+  @@index([licenseId])
+  @@map("lyrics")
+}
+
+model Report {
+  id          String           @id @default(uuid()) @db.Uuid
+  reporterId  String           @map("reporter_id") @db.Uuid
+  entityType  ReportEntityType  @map("entity_type")
+  entityId    String           @map("entity_id") @db.Uuid
+  reason      String
+  status      ReportStatus     @default(open)
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Restrict)
+
+  @@index([reporterId])
+  @@index([entityType, entityId])
+  @@map("reports")
+}
+
+model ProviderSyncLog {
+  id            String    @id @default(uuid()) @db.Uuid
+  providerId    String    @map("provider_id") @db.Uuid
+  startedAt     DateTime  @map("started_at") @db.Timestamptz
+  finishedAt    DateTime? @map("finished_at") @db.Timestamptz
+  status        JobStatus
+  recordsSynced Int       @default(0) @map("records_synced")
+  error         String?
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, startedAt(sort: Desc)])
+  @@map("provider_sync_logs")
+}
+
+model ProviderHealthCheck {
+  id         String       @id @default(uuid()) @db.Uuid
+  providerId String       @map("provider_id") @db.Uuid
+  checkedAt  DateTime     @default(now()) @map("checked_at") @db.Timestamptz
+  status     HealthStatus
+  latencyMs  Int?         @map("latency_ms")
+  error      String?
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId, checkedAt(sort: Desc)])
+  @@map("provider_health_checks")
+}

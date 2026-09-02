@@ -1,0 +1,184 @@
+import { prisma } from "../db/prisma.js";
+import { AppError, ErrorCodes } from "../http/errors.js";
+import { providerRegistry } from "../providers/core/registry.js";
+import { persistProviderTrack } from "./persist.js";
+import { orderByRank, rankTrackIds } from "./ranking.js";
+
+export async function searchCatalog(query: string, limit = 20) {
+  const q = query.trim();
+  if (q.length < 1) {
+    throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "q is required");
+  }
+
+  const enabled = await prisma.provider.findMany({ where: { isEnabled: true } });
+  const seen = new Set<string>();
+  const results = [];
+
+  for (const row of enabled) {
+    const provider = providerRegistry.get(row.slug);
+    if (!provider) {
+      continue;
+    }
+    const hits = await provider.search(q, { limit });
+    for (const hit of hits) {
+      const persisted = await persistProviderTrack(row.slug, hit);
+      if (seen.has(persisted.track.id)) {
+        continue;
+      }
+      seen.add(persisted.track.id);
+      results.push(await serializeTrack(persisted.track.id));
+      if (results.length >= limit) {
+        break;
+      }
+    }
+    if (results.length >= limit) {
+      break;
+    }
+  }
+
+  const rankedIds = await rankTrackIds(results.map((item) => item.id));
+  return orderByRank(results, rankedIds);
+}
+
+export async function serializeTrack(trackId: string) {
+  const track = await prisma.track.findFirst({
+    where: { id: trackId, deletedAt: null },
+    include: {
+      trackArtists: { include: { artist: true }, orderBy: { position: "asc" } },
+      trackSources: { include: { license: true, provider: true } },
+      album: true,
+    },
+  });
+  if (!track) {
+    throw new AppError(404, ErrorCodes.NOT_FOUND, "Track not found");
+  }
+  const primary = track.trackArtists[0]?.artist;
+  const source = track.trackSources[0];
+  return {
+    id: track.id,
+    title: track.title,
+    durationMs: track.durationMs,
+    artworkUrl: track.artworkUrl,
+    album: track.album ? { id: track.album.id, title: track.album.title } : null,
+    artist: primary ? { id: primary.id, name: primary.name } : null,
+    license: source
+      ? {
+          spdxId: source.license.spdxId,
+          name: source.license.name,
+          url: source.license.url,
+          requiresAttribution: source.license.requiresAttribution,
+        }
+      : null,
+    availability: {
+      stream: track.trackSources.some((item) => item.supportsStreaming),
+      download: track.trackSources.some((item) => item.supportsDownload),
+      attributionRequired: track.trackSources.some(
+        (item) => item.license.requiresAttribution,
+      ),
+    },
+    source: source
+      ? { provider: source.provider.slug, providerName: source.provider.name }
+      : null,
+  };
+}
+
+export async function getArtist(id: string) {
+  const artist = await prisma.artist.findUnique({
+    where: { id },
+    include: {
+      trackArtists: {
+        where: { track: { deletedAt: null } },
+        include: { track: true },
+        orderBy: { track: { title: "asc" } },
+        take: 50,
+      },
+      albumArtists: {
+        include: { album: true },
+        orderBy: { album: { title: "asc" } },
+      },
+    },
+  });
+  if (!artist) {
+    throw new AppError(404, ErrorCodes.NOT_FOUND, "Artist not found");
+  }
+  const seenAlbums = new Set<string>();
+  const albums = [];
+  for (const row of artist.albumArtists) {
+    if (seenAlbums.has(row.album.id)) {
+      continue;
+    }
+    seenAlbums.add(row.album.id);
+    albums.push({
+      id: row.album.id,
+      title: row.album.title,
+      artworkUrl: row.album.artworkUrl,
+    });
+  }
+  return {
+    id: artist.id,
+    name: artist.name,
+    bio: artist.bio,
+    artworkUrl: artist.artworkUrl,
+    albums,
+    tracks: await Promise.all(
+      artist.trackArtists.map((item) => serializeTrack(item.track.id)),
+    ),
+  };
+}
+
+export async function getArtistAlbums(id: string) {
+  const artist = await prisma.artist.findUnique({
+    where: { id },
+    include: {
+      albumArtists: { include: { album: true } },
+    },
+  });
+  if (!artist) {
+    throw new AppError(404, ErrorCodes.NOT_FOUND, "Artist not found");
+  }
+  return {
+    artistId: artist.id,
+    albums: artist.albumArtists.map((item) => ({
+      id: item.album.id,
+      title: item.album.title,
+      artworkUrl: item.album.artworkUrl,
+    })),
+  };
+}
+
+export async function getArtistTracks(id: string) {
+  const artist = await getArtist(id);
+  return { artistId: artist.id, tracks: artist.tracks };
+}
+
+export async function getAlbum(id: string) {
+  const album = await prisma.album.findUnique({
+    where: { id },
+    include: {
+      tracks: {
+        where: { deletedAt: null },
+        orderBy: { title: "asc" },
+      },
+      albumArtists: { include: { artist: true }, orderBy: { position: "asc" } },
+    },
+  });
+  if (!album) {
+    throw new AppError(404, ErrorCodes.NOT_FOUND, "Album not found");
+  }
+  return {
+    id: album.id,
+    title: album.title,
+    artworkUrl: album.artworkUrl,
+    releaseDate: album.releaseDate,
+    artists: album.albumArtists.map((item) => ({
+      id: item.artist.id,
+      name: item.artist.name,
+    })),
+    tracks: await Promise.all(album.tracks.map((track) => serializeTrack(track.id))),
+  };
+}
+
+export async function getAlbumTracks(id: string) {
+  const album = await getAlbum(id);
+  return { albumId: album.id, tracks: album.tracks };
+}

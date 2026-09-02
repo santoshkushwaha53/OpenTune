@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend lint and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: opentune
+          POSTGRES_PASSWORD: opentune
+          POSTGRES_DB: opentune
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U opentune -d opentune"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://opentune:opentune@localhost:5432/opentune?schema=public
+      JWT_ACCESS_SECRET: ci-access-secret-not-for-production-use-32ch
+      JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production-use-32ch
+      OPERATOR_TOKEN: test-operator-token-not-for-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run db:validate
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run db:migrate:deploy
+      - run: npm run db:seed
+      - run: npm test
+
+  mobile:
+    name: Flutter analyze and test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  image:
+    name: API production image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t opentune-api:ci ./backend
