@@ -80,6 +80,8 @@ class CatalogSourcesScreen extends ConsumerWidget {
     final slug = row['slug'] as String? ?? '';
     final health = row['healthStatus'] as String? ?? 'unknown';
     final enabled = row['isEnabled'] as bool? ?? false;
-    return '$slug · ${enabled ? 'enabled' : 'disabled'} · $health';
+    final priority = row['priority'];
+    final rank = priority is int ? 'P$priority · ' : '';
+    return '$rank$slug · ${enabled ? 'enabled' : 'disabled'} · $health';
   }
 }

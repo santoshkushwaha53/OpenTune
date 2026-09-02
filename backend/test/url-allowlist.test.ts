@@ -7,6 +7,9 @@ describe("provider URL allowlist", () => {
     expect(assertSafeProviderUrl("https://api.jamendo.com/v3.0/tracks").hostname).toBe(
       "api.jamendo.com",
     );
+    expect(
+      assertSafeProviderUrl("https://api.audius.co/v1/tracks/search").hostname,
+    ).toBe("api.audius.co");
     expect(() => assertSafeProviderUrl("http://api.jamendo.com/v3.0/tracks")).toThrow();
     expect(() => assertSafeProviderUrl("https://evil.example/audio.mp3")).toThrow();
     expect(() =>

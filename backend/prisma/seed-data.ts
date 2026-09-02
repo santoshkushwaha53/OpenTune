@@ -39,11 +39,21 @@ export const SEED_LICENSES: readonly SeedLicense[] = [
 ];
 
 export const JAMENDO_PROVIDER_SLUG = "jamendo";
+export const AUDIUS_PROVIDER_SLUG = "audius";
+export const FMA_PROVIDER_SLUG = "fma";
 
 export const JAMENDO_CAPABILITIES = {
   supportsStreaming: true,
   supportsDownload: true,
   supportsOffline: true,
+  supportsRedistribution: false,
+  requiresAttribution: true,
+} as const;
+
+export const FMA_CAPABILITIES = {
+  supportsStreaming: false,
+  supportsDownload: false,
+  supportsOffline: false,
   supportsRedistribution: false,
   requiresAttribution: true,
 } as const;

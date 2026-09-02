@@ -31,6 +31,8 @@ flowchart LR
   pg[(PostgreSQL)]
   resolver[SourceResolver]
   jamendo[JamendoAPI]
+  audius[AudiusAPI]
+  fma[FMADisabled]
   other[FutureProviders]
   device[DeviceStorage]
 
@@ -38,10 +40,12 @@ flowchart LR
   flutter -->|metadata JWT REST| api
   api --> pg
   api --> resolver
+  resolver --> audius
   resolver --> jamendo
+  resolver --> fma
   resolver --> other
+  audius -->|stream or download URL| flutter
   jamendo -->|stream or download URL| flutter
-  other -->|stream or download URL| flutter
   flutter --> device
 ```
 
@@ -103,7 +107,9 @@ Primary navigation: Home, Discover, Library. A persistent mini-player sits above
 ```
 backend/src/providers/
   core/                 MusicProvider, capabilities, DTOs, errors
-  jamendo/              first legal connector (Phase 6)
+  audius/               official Audius API (priority 1)
+  jamendo/              official Jamendo API (priority 2)
+  fma/                  disabled FMA slot (priority 3)
 ```
 
 Conceptual interface:
@@ -131,13 +137,32 @@ type ProviderCapabilities = {
 
 The source resolver never invents a download from a stream-only capability set.
 
-First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). Additional providers are additive plugins. Implemented in `backend/src/providers/jamendo/` with fixture tests; enabled when `JAMENDO_CLIENT_ID` is set.
+First planned connector: **Jamendo official API** (Creative Commons catalog, stream and download, attribution). **Audius** is priority 1 when `AUDIUS_API_KEY` is set (downloadable CC tracks only). **FMA** is a disabled priority-3 slot because its public API was retired and scraping/hotlinking are not allowed. Additional providers are additive plugins.
 
 ## Source resolver (Phase 7)
 
 ```
 Track → Source Resolver → Provider A / B / C → permitted available source
 ```
+
+Sohum discovery search walks enabled connectors in priority order:
+
+```
+Search (Hindi / English / …)
+        │
+        ▼
+  Source router: Audius → Jamendo → FMA
+        │
+        ▼
+  Rights filter: downloadAllowed?
+        ├── yes → persist metadata, device may download from the provider URL
+        └── no  → next source (never invent a download from a stream)
+        │
+        ▼
+  Local catalog on the user device → offline player
+```
+
+FMA is registered but **not queried**; it has no official API.
 
 The resolver verifies:
 

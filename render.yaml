@@ -24,3 +24,5 @@ services:
         sync: false
       - key: JAMENDO_CLIENT_ID
         sync: false
+      - key: AUDIUS_API_KEY
+        sync: false

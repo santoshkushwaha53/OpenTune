@@ -9,6 +9,8 @@ const DEFAULT_ALLOWLIST = [
   "mp3l.jamendo.com",
   "mp3d.jamendo.com",
   "storage.jamendo.com",
+  "api.audius.co",
+  "audius.co",
 ];
 
 /**

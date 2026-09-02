@@ -11,8 +11,13 @@ Connectors implement `MusicProvider` under `core/types.ts`. The Fastify API neve
 | `core/capabilities.ts` | Stream/download permission helpers               |
 | `core/errors.ts`       | `ProviderError`, `ProviderCapabilityError`       |
 | `fake/FakeProvider.ts` | Test catalog (downloadable + stream-only tracks) |
+| `audius/`              | Official Audius API (priority 1, downloadable CC) |
+| `jamendo/`              | Official Jamendo API (priority 2) |
+| `fma/`                  | Disabled slot — FMA retired its API; no scrape |
 
-Jamendo (`jamendo/`) is the first **legal** connector (Phase 6). Official API only; recorded fixtures in CI. Do not scrape catalogs or invent a download from a stream-only capability set.
+Search walks enabled connectors in **priority order**. Download-allowed hits fill the list first; listen-only rows are kept only if the catalog would otherwise be empty of those query matches. `permittedDownloadSource()` still returns `null` for stream-only tracks.
+
+Jamendo (`jamendo/`) is a **legal** connector (Phase 6). Official API only; recorded fixtures in CI. Do not scrape catalogs or invent a download from a stream-only capability set.
 
 A connector must declare:
 

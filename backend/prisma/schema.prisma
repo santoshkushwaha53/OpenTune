@@ -204,6 +204,8 @@ model Provider {
   slug              String       @unique
   name              String
   isEnabled         Boolean      @default(false) @map("is_enabled")
+  /// Lower is earlier in the Sohum source router (Audius 1, Jamendo 2, FMA 3).
+  priority          Int          @default(100)
   /// ProviderCapabilities JSON: streaming, download, offline, redistribution, attribution.
   capabilities      Json
   baseUrl           String       @map("base_url")
@@ -217,6 +219,7 @@ model Provider {
   healthChecks ProviderHealthCheck[]
 
   @@index([isEnabled])
+  @@index([isEnabled, priority])
   @@map("providers")
 }
 

@@ -1,0 +1,34 @@
+{
+  "data": [
+    {
+      "id": "D7KyD",
+      "title": "Open Pulse",
+      "duration": 180,
+      "is_downloadable": true,
+      "license": "Attribution",
+      "created_at": "2019-04-01T00:00:00Z",
+      "artwork": {
+        "480x480": "https://creatornode.audius.co/ipfs/cover.jpg"
+      },
+      "user": { "id": "u1", "name": "Open Desk", "handle": "opendesk" }
+    },
+    {
+      "id": "ARR99",
+      "title": "Closed Cut",
+      "duration": 120,
+      "is_downloadable": true,
+      "license": "All Rights Reserved",
+      "created_at": "2020-01-01T00:00:00Z",
+      "user": { "id": "u2", "name": "Locked" }
+    },
+    {
+      "id": "STR33",
+      "title": "Hindi Stream",
+      "duration": 90,
+      "is_downloadable": false,
+      "license": "Attribution",
+      "created_at": "2021-06-01T00:00:00Z",
+      "user": { "id": "u3", "name": "Radio" }
+    }
+  ]
+}

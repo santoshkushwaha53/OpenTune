@@ -2,7 +2,9 @@ import { prisma } from "../db/prisma.js";
 import { AppError, ErrorCodes } from "../http/errors.js";
 import { providerRegistry } from "../providers/core/registry.js";
 import { persistProviderTrack } from "./persist.js";
+import type { ProviderTrack } from "../providers/core/types.js";
 import { jamendoFuzzyTags } from "../providers/jamendo/tags.js";
+import { partitionByDownloadRights } from "./source-router.js";
 import { orderByRank, rankTrackIds } from "./ranking.js";
 
 export async function searchCatalog(
@@ -17,9 +19,13 @@ export async function searchCatalog(
     throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "q or year is required");
   }
 
-  const enabled = await prisma.provider.findMany({ where: { isEnabled: true } });
+  const enabled = await prisma.provider.findMany({
+    where: { isEnabled: true },
+    orderBy: { priority: "asc" },
+  });
   const seen = new Set<string>();
-  const results = [];
+  const downloadable = [];
+  const listenOnly = [];
 
   for (const row of enabled) {
     const provider = providerRegistry.get(row.slug);
@@ -27,25 +33,28 @@ export async function searchCatalog(
       continue;
     }
     const hits = await provider.search(q, { limit, yearFrom, yearTo });
-    for (const hit of hits) {
-      try {
-        const persisted = await persistProviderTrack(row.slug, hit);
-        if (seen.has(persisted.track.id)) {
-          continue;
-        }
-        seen.add(persisted.track.id);
-        results.push(await serializeTrack(persisted.track.id));
-        if (results.length >= limit) {
+    const partitioned = partitionByDownloadRights(hits);
+    for (const hit of partitioned.downloadable) {
+      const serialized = await persistHit(row.slug, hit, seen);
+      if (serialized) {
+        downloadable.push(serialized);
+        if (downloadable.length >= limit) {
           break;
         }
-      } catch {
-        continue;
       }
     }
-    if (results.length >= limit) {
+    if (downloadable.length >= limit) {
       break;
     }
+    for (const hit of partitioned.listenOnly) {
+      const serialized = await persistHit(row.slug, hit, seen);
+      if (serialized) {
+        listenOnly.push(serialized);
+      }
+    }
   }
+
+  const results = [...downloadable, ...listenOnly].slice(0, limit);
 
   if (results.length === 0 && q.length > 0) {
     const local = await searchPersistedCatalog(q, {
@@ -59,6 +68,19 @@ export async function searchCatalog(
 
   const rankedIds = await rankTrackIds(results.map((item) => item.id));
   return orderByRank(results, rankedIds);
+}
+
+async function persistHit(providerSlug: string, hit: ProviderTrack, seen: Set<string>) {
+  try {
+    const persisted = await persistProviderTrack(providerSlug, hit);
+    if (seen.has(persisted.track.id)) {
+      return null;
+    }
+    seen.add(persisted.track.id);
+    return serializeTrack(persisted.track.id);
+  } catch {
+    return null;
+  }
 }
 
 async function searchPersistedCatalog(

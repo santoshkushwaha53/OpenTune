@@ -58,6 +58,7 @@ describe("prisma schema", () => {
     expect(schema).toContain("@@index([canonicalKey])");
     expect(schema).toContain("@@index([deletedAt, createdAt(sort: Desc)])");
     expect(schema).toContain("@@index([isEnabled])");
+    expect(schema).toContain("@@index([isEnabled, priority])");
     expect(schema).toContain("@@index([visibility, deletedAt])");
     expect(schema).toContain("@@index([userId, playedAt(sort: Desc)])");
     expect(schema).not.toMatch(/pg_trgm/);

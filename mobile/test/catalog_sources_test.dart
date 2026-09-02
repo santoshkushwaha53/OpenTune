@@ -34,6 +34,7 @@ class _SourcesApiClient extends ApiClient {
         'slug': 'fake',
         'name': 'Fake Open Catalog',
         'isEnabled': true,
+        'priority': 0,
         'healthStatus': 'healthy',
         'lastHealthCheckAt': '2026-09-01T00:00:00.000Z',
         'capabilities': {'supportsStreaming': true, 'supportsDownload': true},
@@ -42,6 +43,7 @@ class _SourcesApiClient extends ApiClient {
         'slug': 'jamendo',
         'name': 'Jamendo',
         'isEnabled': false,
+        'priority': 2,
         'healthStatus': 'down',
         'lastHealthCheckAt': null,
         'capabilities': {'supportsStreaming': true, 'supportsDownload': true},
@@ -77,9 +79,15 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Fake Open Catalog'), findsOneWidget);
-    expect(find.textContaining('fake · enabled · healthy'), findsOneWidget);
+    expect(
+      find.textContaining('P0 · fake · enabled · healthy'),
+      findsOneWidget,
+    );
     expect(find.text('Jamendo'), findsOneWidget);
-    expect(find.textContaining('jamendo · disabled · down'), findsOneWidget);
+    expect(
+      find.textContaining('P2 · jamendo · disabled · down'),
+      findsOneWidget,
+    );
     expect(
       find.textContaining('OpenTune never hosts or proxies audio'),
       findsOneWidget,

@@ -28,7 +28,7 @@ Set `DATABASE_URL` to the Neon `opentune` connection string (`sslmode=require`).
 
 1. Copy [`.env.production.example`](../.env.production.example) to `.env` on the host.
 2. Set `POSTGRES_PASSWORD` (`openssl rand -hex 24`), `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` (`openssl rand -hex 32` twice). Use hex so the database URL does not need encoding. Secrets must differ and must not match documented placeholders.
-3. Optional: `JAMENDO_CLIENT_ID`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
+3. Optional: `AUDIUS_API_KEY`, `JAMENDO_CLIENT_ID`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
 4. Start the stack:
 
    ```bash
@@ -69,7 +69,7 @@ Tag and GitHub Release: [RELEASE.md](RELEASE.md).
 
 1. Copy [`.env.production.example`](../.env.production.example) to `.env` on the host.
 2. Set `POSTGRES_PASSWORD` (`openssl rand -hex 24`), `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` (`openssl rand -hex 32` twice). Use hex so the database URL does not need encoding. Secrets must differ and must not match documented placeholders.
-3. Optional: `JAMENDO_CLIENT_ID`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
+3. Optional: `AUDIUS_API_KEY`, `JAMENDO_CLIENT_ID`, `OPERATOR_TOKEN`, `CORS_ORIGIN`.
 4. Start the stack:
 
    ```bash

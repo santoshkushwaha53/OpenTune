@@ -1,3 +1,4 @@
+import { AUDIUS_HOST_ALLOWLIST } from "../providers/audius/licenses.js";
 import { JAMENDO_HOST_ALLOWLIST } from "../providers/jamendo/licenses.js";
 import { assertSafeProviderUrl } from "../security/url-allowlist.js";
 
@@ -8,6 +9,9 @@ const EXTRA_HOSTS: Record<string, string[]> = {
 export function hostAllowlistForProvider(slug: string): string[] {
   if (slug === "jamendo") {
     return JAMENDO_HOST_ALLOWLIST;
+  }
+  if (slug === "audius") {
+    return AUDIUS_HOST_ALLOWLIST;
   }
   return EXTRA_HOSTS[slug] ?? [];
 }
