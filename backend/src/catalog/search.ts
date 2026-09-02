@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma.js";
 import { AppError, ErrorCodes } from "../http/errors.js";
 import { providerRegistry } from "../providers/core/registry.js";
 import { persistProviderTrack } from "./persist.js";
+import { jamendoFuzzyTags } from "../providers/jamendo/tags.js";
 import { orderByRank, rankTrackIds } from "./ranking.js";
 
 export async function searchCatalog(
@@ -27,14 +28,18 @@ export async function searchCatalog(
     }
     const hits = await provider.search(q, { limit, yearFrom, yearTo });
     for (const hit of hits) {
-      const persisted = await persistProviderTrack(row.slug, hit);
-      if (seen.has(persisted.track.id)) {
+      try {
+        const persisted = await persistProviderTrack(row.slug, hit);
+        if (seen.has(persisted.track.id)) {
+          continue;
+        }
+        seen.add(persisted.track.id);
+        results.push(await serializeTrack(persisted.track.id));
+        if (results.length >= limit) {
+          break;
+        }
+      } catch {
         continue;
-      }
-      seen.add(persisted.track.id);
-      results.push(await serializeTrack(persisted.track.id));
-      if (results.length >= limit) {
-        break;
       }
     }
     if (results.length >= limit) {
@@ -42,8 +47,66 @@ export async function searchCatalog(
     }
   }
 
+  if (results.length === 0 && q.length > 0) {
+    const local = await searchPersistedCatalog(q, {
+      limit,
+      yearFrom,
+      yearTo,
+      excludeIds: [...seen],
+    });
+    results.push(...local);
+  }
+
   const rankedIds = await rankTrackIds(results.map((item) => item.id));
   return orderByRank(results, rankedIds);
+}
+
+async function searchPersistedCatalog(
+  query: string,
+  options: {
+    limit: number;
+    yearFrom?: number;
+    yearTo?: number;
+    excludeIds: string[];
+  },
+) {
+  const terms = [
+    ...new Set(
+      [query.trim(), ...jamendoFuzzyTags(query)]
+        .map((term) => term.trim().toLowerCase())
+        .filter((term) => term.length >= 2 && term !== "*"),
+    ),
+  ];
+  if (terms.length === 0 || options.limit < 1) {
+    return [];
+  }
+
+  const releaseDate: { gte?: Date; lte?: Date } = {};
+  if (options.yearFrom != null) {
+    releaseDate.gte = new Date(Date.UTC(options.yearFrom, 0, 1));
+  }
+  if (options.yearTo != null) {
+    releaseDate.lte = new Date(Date.UTC(options.yearTo, 11, 31));
+  }
+
+  const tracks = await prisma.track.findMany({
+    where: {
+      deletedAt: null,
+      ...(options.excludeIds.length ? { id: { notIn: options.excludeIds } } : {}),
+      OR: terms.flatMap((term) => [
+        { title: { contains: term, mode: "insensitive" } },
+        {
+          trackArtists: {
+            some: { artist: { name: { contains: term, mode: "insensitive" } } },
+          },
+        },
+      ]),
+      ...(Object.keys(releaseDate).length ? { album: { is: { releaseDate } } } : {}),
+    },
+    take: options.limit,
+    orderBy: { updatedAt: "desc" },
+  });
+  return Promise.all(tracks.map((track) => serializeTrack(track.id)));
 }
 
 export async function serializeTrack(trackId: string) {

@@ -4,7 +4,7 @@
  * Bollywood/Spotify mapping.
  */
 const JAMENDO_TAG_ALIASES: Record<string, string[]> = {
-  bollywood: ["india", "indian", "sitar", "world"],
+  bollywood: ["india", "indian", "world"],
   "indian pop": ["indian", "pop", "world"],
   hindi: ["india", "indian", "world"],
   tamil: ["india", "indian", "world"],
@@ -33,7 +33,23 @@ const JAMENDO_TAG_ALIASES: Record<string, string[]> = {
   party: ["pop", "electronic", "dance"],
   relax: ["relaxation", "lounge", "ambient"],
   folk: ["folk"],
+  piano: ["piano"],
+  jazz: ["jazz"],
+  rock: ["rock"],
+  pop: ["pop"],
+  ambient: ["ambient"],
+  acoustic: ["acoustic"],
+  classical: ["classical"],
+  electronic: ["electronic"],
+  indie: ["indie"],
+  instrumental: ["instrumental"],
+  world: ["world"],
 };
+
+export function jamendoHasTagAlias(query: string): boolean {
+  const key = query.trim().toLowerCase().replace(/\s+/g, " ");
+  return Boolean(JAMENDO_TAG_ALIASES[key]);
+}
 
 export function jamendoFuzzyTags(query: string, nameHitCount = 0): string[] {
   const key = query.trim().toLowerCase().replace(/\s+/g, " ");

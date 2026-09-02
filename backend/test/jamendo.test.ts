@@ -98,7 +98,7 @@ describe("jamendo connector", () => {
     const provider = new JamendoProvider("test-client", fetchImpl);
     await provider.search("piano", { yearFrom: 2018, yearTo: 2018 });
     expect(seen.join(" ")).toContain("datebetween=2018-01-01_2018-12-31");
-    expect(seen.join(" ")).toContain("search=piano");
+    expect(seen.join(" ")).toMatch(/fuzzytags=/);
     expect(seen.join(" ")).not.toContain("audiodownload_allowed");
   });
 
@@ -117,9 +117,9 @@ describe("jamendo connector", () => {
     };
     const provider = new JamendoProvider("test-client", fetchImpl);
     const results = await provider.search("bollywood");
-    expect(seen[0]).toContain("search=bollywood");
-    expect(seen[1]).toMatch(/fuzzytags=/);
-    expect(seen[1]).toMatch(/india/);
+    expect(seen[0]).toMatch(/fuzzytags=/);
+    expect(seen[0]).toMatch(/india/);
+    expect(seen.join(" ")).not.toContain("search=bollywood");
     expect(seen.join(" ")).not.toMatch(/\/stream\//);
     expect(results.map((track) => track.title)).toEqual([
       "Make Tomorrow",
@@ -129,12 +129,7 @@ describe("jamendo connector", () => {
   });
 
   it("maps scene names to open-catalog Jamendo tags", () => {
-    expect(jamendoFuzzyTags("bollywood")).toEqual([
-      "india",
-      "indian",
-      "sitar",
-      "world",
-    ]);
+    expect(jamendoFuzzyTags("bollywood")).toEqual(["india", "indian", "world"]);
     expect(jamendoFuzzyTags("piano", 0)).toEqual(["piano"]);
     expect(jamendoFuzzyTags("Open Horizon", 2)).toEqual([]);
   });

@@ -10,7 +10,7 @@ import type {
   ProviderTrack,
 } from "../core/types.js";
 import { isAllowedJamendoUrl, licenseFromJamendoUrl } from "./licenses.js";
-import { jamendoFuzzyTags } from "./tags.js";
+import { jamendoFuzzyTags, jamendoHasTagAlias } from "./tags.js";
 
 export type JamendoTrackPayload = {
   id?: string;
@@ -87,9 +87,9 @@ export class JamendoProvider implements MusicProvider {
       }
     };
 
-    if (q) {
+    if (q && !jamendoHasTagAlias(q)) {
       ingest((await this.request("tracks", { ...params, search: q })).results);
-    } else {
+    } else if (!q) {
       ingest((await this.request("tracks", params)).results);
     }
 
