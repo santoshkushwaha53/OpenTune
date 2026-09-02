@@ -39,6 +39,7 @@ class _DiscoverApi extends ApiClient {
     String query, {
     int? yearFrom,
     int? yearTo,
+    int? limit,
   }) async {
     if (yearFrom != null && yearFrom > 2018) {
       return [];
@@ -83,6 +84,12 @@ void main() {
     expect(find.text('Songs'), findsWidgets);
     expect(find.text('Singers'), findsWidgets);
     expect(find.text('1 song'), findsOneWidget);
+    expect(
+      find.text(
+        'Licensed open-catalog tracks — not commercial film soundtracks.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Open Horizon'), findsWidgets);
     expect(find.text('01'), findsOneWidget);
     expect(find.byTooltip('Play'), findsWidgets);

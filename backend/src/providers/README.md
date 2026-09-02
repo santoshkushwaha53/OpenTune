@@ -4,18 +4,20 @@ Connectors implement `MusicProvider` under `core/types.ts`. The Fastify API neve
 
 ## Phase 5 contract
 
-| Piece                  | Role                                             |
-| ---------------------- | ------------------------------------------------ |
-| `core/types.ts`        | Interface, capabilities, DTOs                    |
-| `core/registry.ts`     | In-memory plugin registry                        |
-| `core/capabilities.ts` | Stream/download permission helpers               |
-| `core/errors.ts`       | `ProviderError`, `ProviderCapabilityError`       |
-| `fake/FakeProvider.ts` | Test catalog (downloadable + stream-only tracks) |
-| `audius/`              | Official Audius API (priority 1, downloadable CC) |
-| `jamendo/`              | Official Jamendo API (priority 2) |
-| `fma/`                  | Disabled slot — FMA retired its API; no scrape |
+| Piece                  | Role                                                   |
+| ---------------------- | ------------------------------------------------------ |
+| `core/types.ts`        | Interface, capabilities, DTOs                          |
+| `core/registry.ts`     | In-memory plugin registry                              |
+| `core/capabilities.ts` | Stream/download permission helpers                     |
+| `core/errors.ts`       | `ProviderError`, `ProviderCapabilityError`             |
+| `fake/FakeProvider.ts` | Test catalog (downloadable + stream-only tracks)       |
+| `audius/`              | Official Audius API (priority 1, CC stream + download) |
+| `jamendo/`             | Official Jamendo API (priority 2)                      |
+| `fma/`                 | Disabled slot — FMA retired its API; no scrape         |
 
 Search walks enabled connectors in **priority order**. Download-allowed hits fill the list first; listen-only rows are kept only if the catalog would otherwise be empty of those query matches. `permittedDownloadSource()` still returns `null` for stream-only tracks.
+
+Operator `POST /providers/:slug/sync` with `query=*` seeds scene queries (Bollywood, Hindi, jazz, …) as **metadata**. Playback URLs are still resolved per request.
 
 Jamendo (`jamendo/`) is a **legal** connector (Phase 6). Official API only; recorded fixtures in CI. Do not scrape catalogs or invent a download from a stream-only capability set.
 

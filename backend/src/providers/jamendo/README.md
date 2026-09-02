@@ -7,6 +7,7 @@ Set `JAMENDO_CLIENT_ID` to enable the provider in PostgreSQL. Without it, the co
 The connector:
 
 - Searches `/tracks` with `include=licenses`
+- Scene chips query one Jamendo tag at a time (india, sitar, raga, …) so a broad `world` tag cannot crowd out Indian results
 - Maps CC0, CC BY, and CC BY-SA; drops BY-NC, BY-ND, and sampling licenses
 - Returns playback/download **URLs** on allowlisted Jamendo hosts
 - Sets `supportsDownload` only when `audiodownload_allowed` is true **and** the download URL is allowlisted

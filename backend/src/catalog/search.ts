@@ -2,6 +2,7 @@ import { prisma } from "../db/prisma.js";
 import { AppError, ErrorCodes } from "../http/errors.js";
 import { providerRegistry } from "../providers/core/registry.js";
 import { persistProviderTrack } from "./persist.js";
+import { persistProviderSearch } from "./discover.js";
 import type { ProviderTrack } from "../providers/core/types.js";
 import { jamendoFuzzyTags } from "../providers/jamendo/tags.js";
 import { partitionByDownloadRights } from "./source-router.js";
@@ -14,7 +15,7 @@ export async function searchCatalog(
   const q = query.trim();
   const yearFrom = options?.yearFrom;
   const yearTo = options?.yearTo;
-  const limit = options?.limit ?? 20;
+  const limit = options?.limit ?? 40;
   if (q.length < 1 && yearFrom == null && yearTo == null) {
     throw new AppError(400, ErrorCodes.VALIDATION_ERROR, "q or year is required");
   }
@@ -32,7 +33,12 @@ export async function searchCatalog(
     if (!provider) {
       continue;
     }
-    const hits = await provider.search(q, { limit, yearFrom, yearTo });
+    let hits: ProviderTrack[];
+    try {
+      hits = await provider.search(q, { limit, yearFrom, yearTo });
+    } catch {
+      continue;
+    }
     const partitioned = partitionByDownloadRights(hits);
     for (const hit of partitioned.downloadable) {
       const serialized = await persistHit(row.slug, hit, seen);
@@ -54,11 +60,13 @@ export async function searchCatalog(
     }
   }
 
-  const results = [...downloadable, ...listenOnly].slice(0, limit);
+  const providerResults = [...downloadable, ...listenOnly].slice(0, limit);
+  const rankedIds = await rankTrackIds(providerResults.map((item) => item.id));
+  const results = orderByRank(providerResults, rankedIds);
 
-  if (results.length === 0 && q.length > 0) {
+  if (results.length < limit && q.length > 0) {
     const local = await searchPersistedCatalog(q, {
-      limit,
+      limit: limit - results.length,
       yearFrom,
       yearTo,
       excludeIds: [...seen],
@@ -66,8 +74,7 @@ export async function searchCatalog(
     results.push(...local);
   }
 
-  const rankedIds = await rankTrackIds(results.map((item) => item.id));
-  return orderByRank(results, rankedIds);
+  return results;
 }
 
 async function persistHit(providerSlug: string, hit: ProviderTrack, seen: Set<string>) {
@@ -171,6 +178,37 @@ export async function serializeTrack(trackId: string) {
     source: source
       ? { provider: source.provider.slug, providerName: source.provider.name }
       : null,
+  };
+}
+
+export async function searchArtists(query: string, options?: { limit?: number }) {
+  const q = query.trim();
+  const limit = Math.min(Math.max(options?.limit ?? 40, 1), 80);
+  if (q.length >= 2) {
+    await persistProviderSearch(q, { limit });
+  }
+
+  const artists = await prisma.artist.findMany({
+    where: {
+      trackArtists: { some: { track: { deletedAt: null } } },
+      ...(q.length > 0 ? { name: { contains: q, mode: "insensitive" as const } } : {}),
+    },
+    orderBy: { name: "asc" },
+    take: limit,
+    include: {
+      _count: { select: { trackArtists: true } },
+    },
+  });
+
+  return {
+    disclaimer:
+      "Singers listed here have licensed tracks in OpenTune's open catalogs. Commercial film artists are not included unless they appear there.",
+    artists: artists.map((artist) => ({
+      id: artist.id,
+      name: artist.name,
+      artworkUrl: artist.artworkUrl,
+      trackCount: artist._count.trackArtists,
+    })),
   };
 }
 

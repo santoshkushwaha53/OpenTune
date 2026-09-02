@@ -119,6 +119,8 @@ describe("jamendo connector", () => {
     const results = await provider.search("bollywood");
     expect(seen[0]).toMatch(/fuzzytags=/);
     expect(seen[0]).toMatch(/india/);
+    expect(seen.join(" ")).toMatch(/fuzzytags=sitar/);
+    expect(seen.join(" ")).not.toMatch(/fuzzytags=india[+ ]indian/);
     expect(seen.join(" ")).not.toContain("search=bollywood");
     expect(seen.join(" ")).not.toMatch(/\/stream\//);
     expect(results.map((track) => track.title)).toEqual([
@@ -129,7 +131,15 @@ describe("jamendo connector", () => {
   });
 
   it("maps scene names to open-catalog Jamendo tags", () => {
-    expect(jamendoFuzzyTags("bollywood")).toEqual(["india", "indian", "world"]);
+    expect(jamendoFuzzyTags("bollywood")).toEqual([
+      "india",
+      "indian",
+      "sitar",
+      "tabla",
+      "raga",
+      "bhangra",
+      "carnatic",
+    ]);
     expect(jamendoFuzzyTags("piano", 0)).toEqual(["piano"]);
     expect(jamendoFuzzyTags("Open Horizon", 2)).toEqual([]);
   });

@@ -94,16 +94,23 @@ export class JamendoProvider implements MusicProvider {
     }
 
     const tags = jamendoFuzzyTags(q, rows.length);
-    if (rows.length < limit && tags.length > 0) {
-      ingest(
-        (
-          await this.request("tracks", {
-            ...params,
-            fuzzytags: tags.join(" "),
-            boost: "popularity_month",
-          })
-        ).results,
-      );
+    for (const tag of tags) {
+      if (rows.length >= limit) {
+        break;
+      }
+      try {
+        ingest(
+          (
+            await this.request("tracks", {
+              ...params,
+              fuzzytags: tag,
+              boost: "popularity_total",
+            })
+          ).results,
+        );
+      } catch {
+        continue;
+      }
     }
 
     return rows

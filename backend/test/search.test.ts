@@ -168,6 +168,16 @@ describe("search and discovery", () => {
       true,
     );
 
+    const singers = await app.inject({
+      method: "GET",
+      url: "/api/v1/search/artists?q=northwind",
+    });
+    expect(singers.statusCode).toBe(200);
+    const singerRows = singers.json().artists as Array<{ name: string }>;
+    expect(singerRows.some((artist) => artist.name === "Northwind")).toBe(true);
+    expect(JSON.stringify(singers.json())).not.toMatch(/playbackUrl|\/stream\//);
+    expect(singers.json().disclaimer).toMatch(/open catalogs/i);
+
     const scenes = await app.inject({
       method: "GET",
       url: "/api/v1/discovery/scenes",

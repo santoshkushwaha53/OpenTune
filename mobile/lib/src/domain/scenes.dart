@@ -8,14 +8,31 @@ class MusicScene {
     required this.colors,
     required this.icon,
     this.fallbackQuery,
+    this.extraQueries = const [],
+    this.catalogNote,
   });
 
   final String slug;
   final String name;
   final String searchQuery;
   final String? fallbackQuery;
+  final List<String> extraQueries;
+  final String? catalogNote;
   final List<Color> colors;
   final IconData icon;
+
+  List<String> get fillQueries {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final value in [...extraQueries, ?fallbackQuery]) {
+      final key = value.trim();
+      if (key.isEmpty || !seen.add(key.toLowerCase())) {
+        continue;
+      }
+      out.add(key);
+    }
+    return out;
+  }
 }
 
 class SceneGroup {
@@ -63,11 +80,20 @@ final discoverSceneGroups = [
         Icons.movie_outlined,
         const [Color(0xFFE11D48), Color(0xFFF59E0B)],
         fallbackQuery: 'indian',
+        extraQueries: const ['sitar', 'raga', 'bhangra', 'tabla', 'carnatic'],
+        catalogNote:
+            'Licensed open-catalog tracks — not commercial film soundtracks.',
       ),
-      _scene('indian-pop', 'Indian Pop', 'indian pop', Icons.mic_none, const [
-        Color(0xFF7C3AED),
-        Color(0xFFEC4899),
-      ]),
+      _scene(
+        'indian-pop',
+        'Indian Pop',
+        'indian pop',
+        Icons.mic_none,
+        const [Color(0xFF7C3AED), Color(0xFFEC4899)],
+        extraQueries: const ['indian', 'bhangra', 'sitar'],
+        catalogNote:
+            'Licensed open-catalog tracks — not commercial film soundtracks.',
+      ),
       _scene(
         'devotional',
         'Devotional',
@@ -156,6 +182,9 @@ final discoverSceneGroups = [
         Icons.record_voice_over_outlined,
         const [Color(0xFFC2410C), Color(0xFFFBBF24)],
         fallbackQuery: 'indian',
+        extraQueries: const ['sitar', 'raga', 'bhangra'],
+        catalogNote:
+            'Licensed open-catalog tracks — not commercial film soundtracks.',
       ),
       _scene(
         'lang-ta',
@@ -164,6 +193,9 @@ final discoverSceneGroups = [
         Icons.record_voice_over_outlined,
         const [Color(0xFFB91C1C), Color(0xFFFB7185)],
         fallbackQuery: 'indian',
+        extraQueries: const ['carnatic', 'sitar', 'raga'],
+        catalogNote:
+            'Licensed open-catalog tracks — not commercial film soundtracks.',
       ),
       _scene(
         'lang-te',
@@ -172,6 +204,9 @@ final discoverSceneGroups = [
         Icons.record_voice_over_outlined,
         const [Color(0xFF7C2D12), Color(0xFFFDBA74)],
         fallbackQuery: 'indian',
+        extraQueries: const ['carnatic', 'sitar'],
+        catalogNote:
+            'Licensed open-catalog tracks — not commercial film soundtracks.',
       ),
       _scene(
         'lang-en',
@@ -235,12 +270,16 @@ MusicScene _scene(
   IconData icon,
   List<Color> colors, {
   String? fallbackQuery,
+  List<String> extraQueries = const [],
+  String? catalogNote,
 }) {
   return MusicScene(
     slug: slug,
     name: name,
     searchQuery: query,
     fallbackQuery: fallbackQuery,
+    extraQueries: extraQueries,
+    catalogNote: catalogNote,
     colors: colors,
     icon: icon,
   );

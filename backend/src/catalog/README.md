@@ -20,7 +20,9 @@ Discover scenes are editorial open-catalog queries (Bollywood, Hindi, Jazz, …)
 
 Search accepts `year` / `yearFrom` / `yearTo` and maps them to provider date filters (Jamendo `datebetween`).
 
-Provider health (Phase 17) can disable a connector after repeated `healthCheck` failures. Disabled providers are omitted from this search loop. Catalog sync uses the same persist path and never writes audio URLs.
+Provider health (Phase 17) can disable a connector after repeated `healthCheck` failures. Disabled providers are omitted from this search loop. Catalog sync uses the same persist path and never writes audio URLs. `POST /providers/:slug/sync` with `query=*` walks open-catalog scene queries so singers with licensed tracks are stored as metadata.
+
+`GET /api/v1/search/artists` looks up those persisted singers (and live-searches providers when `q` is set). It is not a commercial film-artist directory.
 
 Load tests (Phase 19) hammer search and `/tracks/:id/sources` concurrently. They never request audio bytes. Query indexes are listed in `docs/PERFORMANCE.md`.
 

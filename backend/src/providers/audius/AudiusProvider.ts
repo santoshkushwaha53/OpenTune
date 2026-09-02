@@ -10,6 +10,7 @@ import type {
   ProviderTrack,
 } from "../core/types.js";
 import { isAllowedAudiusUrl, licenseFromAudius } from "./licenses.js";
+import { audiusSearchQueries } from "./queries.js";
 
 export type AudiusTrackPayload = {
   id?: string;
@@ -54,27 +55,46 @@ export class AudiusProvider implements MusicProvider {
     options?: ProviderSearchOptions,
   ): Promise<ProviderSearchResult[]> {
     const limit = Math.min(Math.max(options?.limit ?? 20, 1), 50);
-    const q = query.trim();
-    if (!q || q === "*") {
+    const queries = audiusSearchQueries(query);
+    if (queries.length === 0) {
       return [];
     }
-    const payload = await this.request("tracks/search", {
-      query: q,
-      limit: String(limit),
-      only_downloadable: "true",
-    });
-    const rows = Array.isArray(payload.data)
-      ? payload.data
-      : payload.data
-        ? [payload.data]
-        : [];
-    const mapped = rows
-      .map((row) => this.mapTrack(row))
-      .filter((track): track is ProviderTrack => track !== null)
-      .filter((track) => track.capabilities.supportsDownload);
-    return mapped
-      .filter((track) => yearInRange(track.releasedYear, options))
-      .slice(0, limit);
+    const mapped: ProviderTrack[] = [];
+    const seen = new Set<string>();
+    for (const q of queries) {
+      if (mapped.length >= limit) {
+        break;
+      }
+      let payload: { data?: AudiusTrackPayload[] | AudiusTrackPayload };
+      try {
+        payload = await this.request("tracks/search", {
+          query: q,
+          limit: String(limit),
+        });
+      } catch {
+        continue;
+      }
+      const rows = Array.isArray(payload.data)
+        ? payload.data
+        : payload.data
+          ? [payload.data]
+          : [];
+      for (const row of rows) {
+        const track = this.mapTrack(row);
+        if (!track || seen.has(track.externalId)) {
+          continue;
+        }
+        if (!yearInRange(track.releasedYear, options)) {
+          continue;
+        }
+        seen.add(track.externalId);
+        mapped.push(track);
+        if (mapped.length >= limit) {
+          break;
+        }
+      }
+    }
+    return mapped;
   }
 
   async getTrack(externalId: string): Promise<ProviderTrack | null> {

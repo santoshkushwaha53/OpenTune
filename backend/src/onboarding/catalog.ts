@@ -93,21 +93,37 @@ export const ONBOARDING_MOODS: OnboardingMood[] = [
 ];
 
 /**
- * Open-catalog search seeds used to populate the artist grid when local
- * artists are sparse. These are not commercial-catalog claims.
+ * Open-catalog search seeds used to persist singers/tracks when the local
+ * artist table is sparse. These are not commercial-catalog claims.
  */
-export const ARTIST_DISCOVERY_SEEDS = [
-  "piano",
-  "guitar",
-  "ambient",
-  "acoustic",
-  "electronic",
-  "folk",
-  "jazz",
-  "sitar",
-  "flute",
-  "choir",
-] as const;
+export function catalogArtistSeedQueries(): string[] {
+  const queries = [
+    "piano",
+    "guitar",
+    "ambient",
+    "acoustic",
+    "electronic",
+    "folk",
+    "jazz",
+    "sitar",
+    "flute",
+    "choir",
+    "vocal",
+    "pop",
+    "songwriter",
+    "bhangra",
+    ...ONBOARDING_CATEGORIES.map((item) => item.searchQuery),
+    ...ONBOARDING_LANGUAGES.map((item) => item.searchQuery),
+    ...ONBOARDING_MOODS.map((item) => item.searchQuery),
+  ];
+  return [
+    ...new Set(
+      queries
+        .map((query) => query.trim().toLowerCase())
+        .filter((query) => query.length >= 2 && query !== "*"),
+    ),
+  ];
+}
 
 export const categoryBySlug = new Map(
   ONBOARDING_CATEGORIES.map((item) => [item.slug, item]),

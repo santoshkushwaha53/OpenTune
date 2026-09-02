@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 
-import { searchCatalog } from "../../catalog/search.js";
+import { searchArtists, searchCatalog } from "../../catalog/search.js";
 import { parseWith } from "../../http/validate.js";
 
 const querySchema = z
@@ -17,7 +17,33 @@ const querySchema = z
     { message: "q or year is required" },
   );
 
+const artistQuerySchema = z.object({
+  q: z.string().max(200).optional(),
+  limit: z.coerce.number().int().min(1).max(80).optional(),
+});
+
 export async function searchRoutes(app: FastifyInstance): Promise<void> {
+  app.get(
+    "/search/artists",
+    {
+      schema: {
+        tags: ["search"],
+        summary: "Open-catalog singers with licensed tracks",
+        querystring: {
+          type: "object",
+          properties: {
+            q: { type: "string" },
+            limit: { type: "integer" },
+          },
+        },
+      },
+    },
+    async (request) => {
+      const query = parseWith(artistQuerySchema, request.query, "query");
+      return searchArtists(query.q ?? "", { limit: query.limit });
+    },
+  );
+
   app.get(
     "/search",
     {
@@ -41,7 +67,7 @@ export async function searchRoutes(app: FastifyInstance): Promise<void> {
       const yearFrom = query.year ?? query.yearFrom;
       const yearTo = query.year ?? query.yearTo;
       const results = await searchCatalog(query.q ?? "", {
-        limit: query.limit,
+        limit: query.limit ?? 40,
         yearFrom,
         yearTo,
       });

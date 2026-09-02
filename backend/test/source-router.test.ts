@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 
 import { AudiusProvider } from "../src/providers/audius/AudiusProvider.js";
 import { licenseFromAudius } from "../src/providers/audius/licenses.js";
+import { audiusSearchQueries } from "../src/providers/audius/queries.js";
 import { FmaProvider } from "../src/providers/fma/FmaProvider.js";
 import {
   downloadAllowed,
@@ -51,9 +52,11 @@ describe("audius connector", () => {
   it("maps downloadable CC tracks and drops ARR", async () => {
     const provider = new AudiusProvider("test-key", fixtureFetch());
     const results = await provider.search("hindi");
-    expect(results.map((track) => track.title)).toEqual(["Open Pulse"]);
+    expect(results.map((track) => track.title)).toEqual(["Open Pulse", "Hindi Stream"]);
     expect(results[0]?.capabilities.supportsDownload).toBe(true);
     expect(results[0]?.license.spdxId).toBe("CC-BY-4.0");
+    const streamOnly = results.find((track) => track.title === "Hindi Stream");
+    expect(streamOnly?.capabilities.supportsDownload).toBe(false);
     expect(results.find((track) => track.title === "Closed Cut")).toBeUndefined();
   });
 
@@ -74,7 +77,8 @@ describe("audius connector", () => {
     };
     const provider = new AudiusProvider("test-key", fetchImpl);
     await provider.search("english");
-    expect(seen.join(" ")).toContain("only_downloadable=true");
+    expect(seen.join(" ")).toContain("query=english");
+    expect(seen.join(" ")).not.toContain("only_downloadable=");
     expect(seen.join(" ")).not.toMatch(/\/stream\//);
   });
 });
@@ -136,6 +140,19 @@ describe("sohum source router", () => {
     expect(downloadable.map((item) => item.title)).toEqual(["DL"]);
     expect(listenOnly.map((item) => item.title)).toEqual(["Stream"]);
     expect(downloadAllowed(listenOnly[0]!)).toBe(false);
+  });
+
+  it("expands Bollywood-style queries across licensed catalog terms", () => {
+    expect(audiusSearchQueries("bollywood")).toEqual([
+      "bollywood",
+      "hindi",
+      "indian",
+      "bhangra",
+      "sitar",
+      "raga",
+      "tabla",
+    ]);
+    expect(audiusSearchQueries("piano")).toEqual(["piano"]);
   });
 
   it("maps Audius license strings", () => {

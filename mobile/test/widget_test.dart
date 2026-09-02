@@ -100,6 +100,7 @@ class _CatalogApiClient extends _EmptyApiClient {
     String query, {
     int? yearFrom,
     int? yearTo,
+    int? limit,
   }) async {
     if (query.toLowerCase().contains('harbor')) {
       return [_harbor];

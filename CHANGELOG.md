@@ -12,6 +12,8 @@ All notable changes to OpenTune are documented here.
 - Discover scene results show a song count plus Play and Download actions (no source URLs)
 - Discover scene search falls back to Jamendo tags when a name search is empty (open catalog, not commercial film songs)
 - Discover retries empty scene chips with an open-catalog query (Bollywood → indian) so the list is not blank
+- Indian scene chips fill from per-tag Jamendo/Audius queries (sitar, raga, bhangra, …) and say they are licensed open-catalog tracks, not film soundtracks
+- Discover singer search seeds open-catalog artists (Jamendo/Audius) so the Singers tab can find names that have licensed tracks
 - Sohum source router: Audius (1) → Jamendo (2) → FMA (3, disabled). Search prefers download-allowed tracks; stream-only is never turned into a download. FMA has no official API so it is not queried.
 - Home hero follows now playing, listen history, and the last Discover search
 

@@ -68,6 +68,7 @@ Catalogs are editorial ranking signals plus **open-licensed** artists from enabl
 | Method | Path | Notes |
 | --- | --- | --- |
 | GET | `/api/v1/search` | `?q=` and/or `year` / `yearFrom` / `yearTo`; aggregated across enabled providers, deduped, ranked. Metadata only — no playback URLs. |
+| GET | `/api/v1/search/artists` | `?q=` optional singer name; live open-catalog search then local artists who have licensed tracks. Not a commercial film-artist directory. |
 
 ## Tracks — `/api/v1/tracks`
 

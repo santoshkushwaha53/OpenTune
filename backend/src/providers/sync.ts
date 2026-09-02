@@ -1,5 +1,9 @@
 import { prisma } from "../db/prisma.js";
-import { persistProviderTrack } from "../catalog/persist.js";
+import {
+  isWildcardCatalogQuery,
+  persistProviderSearch,
+  seedOpenCatalogArtists,
+} from "../catalog/discover.js";
 import { AppError, ErrorCodes } from "../http/errors.js";
 
 import { providerRegistry } from "./core/registry.js";
@@ -39,19 +43,28 @@ export async function syncProviderCatalog(slug: string, query = "*") {
   });
 
   try {
-    const hits = await provider.search(query, { limit: 20 });
-    for (const hit of hits) {
-      await persistProviderTrack(slug, hit);
-    }
+    const result = isWildcardCatalogQuery(query)
+      ? await seedOpenCatalogArtists({
+          limitPerQuery: 20,
+          maxQueries: 40,
+          providerSlug: slug,
+        })
+      : {
+          queries: 1,
+          recordsSynced: await persistProviderSearch(query, {
+            limit: 20,
+            providerSlug: slug,
+          }),
+        };
     await prisma.providerSyncLog.update({
       where: { id: log.id },
       data: {
         finishedAt: new Date(),
         status: "success",
-        recordsSynced: hits.length,
+        recordsSynced: result.recordsSynced,
       },
     });
-    return { slug, recordsSynced: hits.length, status: "success" as const };
+    return { slug, recordsSynced: result.recordsSynced, status: "success" as const };
   } catch (error) {
     await prisma.providerSyncLog.update({
       where: { id: log.id },

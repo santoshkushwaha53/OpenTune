@@ -28,6 +28,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   final _controller = TextEditingController();
   List<TrackSummary> _results = [];
   List<TrackSummary> _trending = [];
+  List<_ArtistHit> _catalogArtists = [];
   MusicScene? _scene;
   YearFilter _year = discoverYearFilters.first;
   _DiscoverTab _tab = _DiscoverTab.songs;
@@ -86,6 +87,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       setState(() {
         _searched = false;
         _results = [];
+        _catalogArtists = [];
         _error = null;
         _scene = null;
       });
@@ -102,34 +104,27 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     });
     try {
       var results = <TrackSummary>[];
+      var catalogArtists = <_ArtistHit>[];
       if (ref.read(offlineStoreProvider).offline) {
         results = ref.read(downloadStoreProvider).searchLibrary(q);
       } else {
-        results = await ref
-            .read(apiClientProvider)
-            .search(
-              q.isEmpty ? (scene?.searchQuery ?? '') : q,
-              yearFrom: yearFromQuery.$1,
-              yearTo: yearFromQuery.$2,
-            );
-        final fallback = (scene ?? _scene)?.fallbackQuery;
-        if (results.isEmpty &&
-            fallback != null &&
-            fallback.isNotEmpty &&
-            fallback != q) {
-          results = await ref
-              .read(apiClientProvider)
-              .search(
-                fallback,
-                yearFrom: yearFromQuery.$1,
-                yearTo: yearFromQuery.$2,
-              );
-        }
+        final activeScene = scene ?? _scene;
+        final searchQuery = q.isEmpty ? (activeScene?.searchQuery ?? '') : q;
+        results = await _mergeCatalogSearch(
+          searchQuery,
+          yearFrom: yearFromQuery.$1,
+          yearTo: yearFromQuery.$2,
+          extras: activeScene?.fillQueries ?? const [],
+        );
+        catalogArtists = await _loadCatalogArtists(searchQuery);
       }
       if (!mounted) {
         return;
       }
-      setState(() => _results = results);
+      setState(() {
+        _results = results;
+        _catalogArtists = catalogArtists;
+      });
       ref
           .read(tasteStoreProvider)
           .rememberSearch(
@@ -145,6 +140,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       }
       setState(() {
         _results = local;
+        _catalogArtists = [];
         _error = local.isEmpty
             ? 'Search needs a network connection to the OpenTune API.'
             : 'Offline — searching music saved on this device.';
@@ -156,6 +152,95 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
   }
 
+  Future<List<TrackSummary>> _mergeCatalogSearch(
+    String query, {
+    int? yearFrom,
+    int? yearTo,
+    List<String> extras = const [],
+  }) async {
+    final api = ref.read(apiClientProvider);
+    final seen = <String>{};
+    final out = <TrackSummary>[];
+
+    void take(List<TrackSummary> batch) {
+      for (final track in batch) {
+        if (!seen.add(track.id)) {
+          continue;
+        }
+        out.add(track);
+        if (out.length >= 40) {
+          return;
+        }
+      }
+    }
+
+    take(
+      await api.search(query, yearFrom: yearFrom, yearTo: yearTo, limit: 40),
+    );
+    if (out.length >= 20) {
+      return out;
+    }
+    final pending = extras
+        .map((value) => value.trim())
+        .where(
+          (value) =>
+              value.isNotEmpty && value.toLowerCase() != query.toLowerCase(),
+        )
+        .toList();
+    if (pending.isEmpty) {
+      return out;
+    }
+    final batches = await Future.wait(
+      pending.map((extra) async {
+        try {
+          return await api.search(
+            extra,
+            yearFrom: yearFrom,
+            yearTo: yearTo,
+            limit: 40,
+          );
+        } catch (_) {
+          return <TrackSummary>[];
+        }
+      }),
+    );
+    for (final batch in batches) {
+      take(batch);
+      if (out.length >= 40) {
+        break;
+      }
+    }
+    return out;
+  }
+
+  Future<List<_ArtistHit>> _loadCatalogArtists(String query) async {
+    try {
+      final rows = await ref
+          .read(apiClientProvider)
+          .searchArtists(query, limit: 40);
+      final seen = <String>{};
+      final artists = <_ArtistHit>[];
+      for (final row in rows) {
+        final id = row['id'] as String?;
+        final name = row['name'] as String? ?? '';
+        final key = id ?? name;
+        if (name.isEmpty || !seen.add(key)) {
+          continue;
+        }
+        artists.add(
+          _ArtistHit(
+            id: id,
+            name: name,
+            artworkUrl: row['artworkUrl'] as String?,
+          ),
+        );
+      }
+      return artists;
+    } catch (_) {
+      return [];
+    }
+  }
+
   void _openScene(MusicScene scene) {
     _controller.clear();
     _search(scene.searchQuery, scene);
@@ -164,12 +249,23 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   List<_ArtistHit> get _artists {
     final seen = <String>{};
     final artists = <_ArtistHit>[];
+    void add(_ArtistHit artist) {
+      final key = artist.id ?? artist.name;
+      if (key.isEmpty || !seen.add(key)) {
+        return;
+      }
+      artists.add(artist);
+    }
+
+    for (final artist in _catalogArtists) {
+      add(artist);
+    }
     for (final track in _results) {
       final key = track.artistId ?? track.artistName ?? '';
-      if (key.isEmpty || !seen.add(key)) {
+      if (key.isEmpty) {
         continue;
       }
-      artists.add(
+      add(
         _ArtistHit(
           id: track.artistId,
           name: track.artistName ?? 'Unknown artist',
@@ -206,6 +302,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     _scene = null;
                     _searched = false;
                     _results = [];
+                    _catalogArtists = [];
                     _controller.clear();
                     _tab = _DiscoverTab.songs;
                   });
@@ -330,13 +427,28 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         itemCount: _results.length + 1,
         itemBuilder: (context, index) {
           if (index == 0) {
+            final note = _scene?.catalogNote;
             return Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
-              child: Text(
-                label,
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  if (note != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      note,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             );
           }

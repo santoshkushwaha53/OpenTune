@@ -132,6 +132,7 @@ class ApiClient {
     String query, {
     int? yearFrom,
     int? yearTo,
+    int? limit,
   }) async {
     final q = query.trim();
     if (q.isEmpty && yearFrom == null && yearTo == null) {
@@ -145,12 +146,37 @@ class ApiClient {
         '/api/v1/search',
         queryParameters: {
           if (q.isNotEmpty) 'q': q,
-          if (yearFrom != null) 'yearFrom': yearFrom,
-          if (yearTo != null) 'yearTo': yearTo,
+          'yearFrom': ?yearFrom,
+          'yearTo': ?yearTo,
+          'limit': ?limit,
         },
       );
       _offline?.enterOnline();
       return TrackSummary.listFrom(response.data?['results']);
+    } on DioException {
+      _offline?.enterOffline();
+      rethrow;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> searchArtists(
+    String query, {
+    int? limit,
+  }) async {
+    final q = query.trim();
+    if (_offline?.offline == true) {
+      return [];
+    }
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '/api/v1/search/artists',
+        queryParameters: {if (q.isNotEmpty) 'q': q, 'limit': ?limit},
+      );
+      _offline?.enterOnline();
+      return [
+        for (final row in response.data?['artists'] as List<dynamic>? ?? [])
+          if (row is Map<String, dynamic>) row,
+      ];
     } on DioException {
       _offline?.enterOffline();
       rethrow;

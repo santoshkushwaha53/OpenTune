@@ -1,21 +1,21 @@
 /**
  * Jamendo `search` matches names. Discover scenes are genres/languages, so we
- * also query `fuzzytags` (OR). These are open-catalog tags — not a commercial
- * Bollywood/Spotify mapping.
+ * also query `fuzzytags` one tag at a time. These are open-catalog tags — not a
+ * commercial Bollywood/Spotify mapping.
  */
 const JAMENDO_TAG_ALIASES: Record<string, string[]> = {
-  bollywood: ["india", "indian", "world"],
-  "indian pop": ["indian", "pop", "world"],
-  hindi: ["india", "indian", "world"],
-  tamil: ["india", "indian", "world"],
-  telugu: ["india", "indian", "world"],
-  malayalam: ["india", "indian", "world"],
-  kannada: ["india", "indian", "world"],
-  bengali: ["india", "indian", "world"],
-  marathi: ["india", "indian", "world"],
-  punjabi: ["india", "indian", "world"],
-  gujarati: ["india", "indian", "world"],
-  urdu: ["india", "indian", "world"],
+  bollywood: ["india", "indian", "sitar", "tabla", "raga", "bhangra", "carnatic"],
+  "indian pop": ["indian", "sitar", "bhangra"],
+  hindi: ["india", "indian", "sitar", "tabla", "raga", "bhangra"],
+  tamil: ["india", "indian", "carnatic", "sitar"],
+  telugu: ["india", "indian", "carnatic"],
+  malayalam: ["india", "indian"],
+  kannada: ["india", "indian"],
+  bengali: ["india", "indian"],
+  marathi: ["india", "indian"],
+  punjabi: ["india", "indian", "bhangra"],
+  gujarati: ["india", "indian"],
+  urdu: ["india", "indian"],
   korean: ["pop", "world"],
   japanese: ["pop", "world"],
   spanish: ["latin", "pop"],
