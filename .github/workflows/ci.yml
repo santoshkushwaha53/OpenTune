@@ -33,7 +33,7 @@ jobs:
       JWT_REFRESH_SECRET: ci-refresh-secret-not-for-production-use-32ch
       OPERATOR_TOKEN: test-operator-token-not-for-production
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -54,7 +54,7 @@ jobs:
       run:
         working-directory: mobile
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -66,6 +66,6 @@ jobs:
     name: API production image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build API image
         run: docker build -t opentune-api:ci ./backend
