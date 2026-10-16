@@ -35,7 +35,7 @@
     "dotenv": "^17.4.2",
     "fastify": "^5.12.1",
     "jose": "^6.2.10",
-    "prisma": "^6.19.3",
+    "prisma": "^7.10.0",
     "zod": "^4.5.4"
   },
   "devDependencies": {
